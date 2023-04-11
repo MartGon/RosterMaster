@@ -7,22 +7,22 @@ class Character:
         self.recv = Character.extract_items_info(char_json["received"], ["received_at", "is_offspec", "officer_note"])
         self.wishlist = Character.extract_items_info(char_json["wishlist"], ["is_received", "order"])
         self.prios = Character.extract_items_info(char_json["prios"], ["is_received", "order"])
+        self.data = char_json
 
     def extract_items_info(recv_json, pivot_keys):
         recv = {}
         for i in recv_json:
-            item = {"name" : i["name"], "id" : i["id"]}
+            item = {"name" : i["name"], "id" : i["item_id"]}
             for pk in pivot_keys:
                 if pk in i["pivot"]:
                     item[pk] = i["pivot"][pk]
 
-            recv[i["id"]] = item
+            recv[i["item_id"]] = item
         return recv
 
 def ReadDataFromJson(json_data):
 
     characters = {}
-    items = {}
 
     res = json.loads(json_data)
 
@@ -31,7 +31,7 @@ def ReadDataFromJson(json_data):
     
     calculate_update_prios(characters)
 
-    return characters, items
+    return characters
 
 def GetDataFromFile(json_path):
     return open(json_path).read()
