@@ -1,6 +1,7 @@
 
 import argparse
 import csv
+import json
 
 class CharacterBD:
 
@@ -42,14 +43,44 @@ class CharacterBD:
         chars = self.FindCharacters(discord_id)
         chars.pop(char_name)
         return chars
+    
+class Signup:
+
+    def __init__(self, file):
+        data = json.load(open(file))
+
+        self.date = data["date"]
+        self.time = data["time"]
+        self.title = data["title"]
+
+        self.players = {}
+        self.active_players = {}
+        for player in data["signups"]:
+            p = {"discord-id" : player['userid'], "signup" : player["class"]}
+            self.players[p["discord-id"]] = p
+
+            if p["signup"] != "Absence":
+                self.active_players[p["discord-id"]] = p
+    
+    def CanRaid(self, discord_id):
+        return discord_id in self.active_players
+        
 
 def main():
 
     parser = argparse.ArgumentParser(prog='RosterMaster', description='Creates a somewhat viable roster taking loot into account', epilog='Call with --help to find a list of available commands')
     parser.add_argument("--characters-db", default="characters-db.csv")
+    parser.add_argument("--r1", default="r1.json")
+    parser.add_argument("--r2", default="r2.json")
+    parser.add_argument("--r3", default="r3.json")
     args = parser.parse_args()
 
     charDB = CharacterBD(args.characters_db)
+    s1 = Signup(args.r1)
+    s2 = Signup(args.r2)
+    s3 = Signup(args.r3)
+
+    char = charDB["Ragnaorc"]
 
 if __name__ == "__main__":
     main()
