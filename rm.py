@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import tmb
 
 class CharacterBD:
 
@@ -46,9 +47,10 @@ class CharacterBD:
     
 class Signup:
 
-    def __init__(self, file):
-        data = json.load(open(file))
+    def __init__(self, charDB, file):
+        self.charDB = charDB
 
+        data = json.load(open(file))
         self.date = data["date"]
         self.time = data["time"]
         self.title = data["title"]
@@ -64,23 +66,45 @@ class Signup:
     
     def CanRaid(self, discord_id):
         return discord_id in self.active_players
+    
+    def GetActiveByRole(self, role):
+        chars = {}
+        for _, c in self.charDB.chars.items():
+            if self.CanRaid(c["discord-id"]) and c[role]:
+                chars[c["name"]] = c
+        return chars
+    
+
+class RosterMaster:
+
+    def __init__(self, charDB_file, tmb_file, contested_items_file, r1_file, r2_file, r3_file):
+        self.chars = CharacterBD(charDB_file)
+        self.contested_items = json.load(open(contested_items_file))
+        self.tmb = tmb.ReadDataFromJson(tmb.GetDataFromFile(tmb_file))
+        self.s1 = Signup(self.chars, r1_file)
+        self.s2 = Signup(self.chars, r2_file)
+        self.s3 = Signup(self.chars, r3_file)
         
+    def GenerateRosters(self):
+        char = self.chars["Ragnaorc"]
+        print(char["name"])
+        print(self.s1.GetActiveByRole("tank"))
+        print(len(self.s1.GetActiveByRole("tank")))
+        print(self.contested_items)
 
 def main():
 
     parser = argparse.ArgumentParser(prog='RosterMaster', description='Creates a somewhat viable roster taking loot into account', epilog='Call with --help to find a list of available commands')
     parser.add_argument("--characters-db", default="characters-db.csv")
+    parser.add_argument("--tmb-file", default="character-json.json")
     parser.add_argument("--r1", default="r1.json")
     parser.add_argument("--r2", default="r2.json")
     parser.add_argument("--r3", default="r3.json")
+    parser.add_argument("--contested-items", default="contested-items.json")
     args = parser.parse_args()
 
-    charDB = CharacterBD(args.characters_db)
-    s1 = Signup(args.r1)
-    s2 = Signup(args.r2)
-    s3 = Signup(args.r3)
-
-    char = charDB["Ragnaorc"]
+    rm = RosterMaster(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
+    rm.GenerateRosters()
 
 if __name__ == "__main__":
     main()
