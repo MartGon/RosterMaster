@@ -2,6 +2,8 @@
 import argparse
 import csv
 import json
+import random
+
 import tmb
 
 class CharacterBD:
@@ -67,15 +69,64 @@ class Signup:
             if p["signup"] != "Absence":
                 self.active_players[p["discord_id"]] = p
     
-    def CanRaid(self, discord_id):
+    def CanPlayerRaid(self, discord_id):
         return discord_id in self.active_players
     
-    def GetActiveByRole(self, role):
+    def GetActiveCharsByRole(self, role):
         chars = {}
         for _, c in self.charDB.chars.items():
-            if self.CanRaid(c["discord_id"]) and c[role]:
+            if self.CanPlayerRaid(c["discord_id"]) and c[role]:
                 chars[c["name"]] = c
         return chars
+    
+    def GetActiveChars(self):
+        chars = {}
+        for _, c in self.charDB.chars.items():
+            if self.CanRaid(c["discord_id"]):
+                chars[c["name"]] = c
+        return chars
+    
+    def GetActivePlayers(self):
+        return self.active_players
+    
+class Roster:
+
+    def __init__(self, signup : Signup, char_db, tmb, id):
+        self.roster = {}
+
+        self.signup = signup
+        self.chars = char_db
+        self.tmb = tmb
+        self.id = id
+
+    def __getitem__(self, key):
+        return self.roster[key]
+    
+    def __contains__(self, key):
+        return key in self.roster
+    
+    def items(self):
+        return self.roster.items()
+    
+    def __str__(self):
+        return str(self.roster)
+    
+    def RosterChar(self, char_name, role):
+        self.roster[char_name] = role
+    
+    def ContainsAlt(self, char_name):
+        discord_id = self.chars[char_name]['discord_id']
+        res, c = self.ContainsPlayer(discord_id)
+        return res and c['name'] != char_name
+
+    def ContainsPlayer(self, discord_id):
+        for c, r in self.roster.items():
+            if self.chars[c]['discord_id'] == discord_id:
+                return True, c
+        return False
+
+    def IsValid(self):
+        return len(self.roster) == 10
 
 class RosterMaster:
 
@@ -87,14 +138,71 @@ class RosterMaster:
         self.s2 = Signup(self.chars, r2_file)
         self.s3 = Signup(self.chars, r3_file)
         
-    def GenerateRosters(self):
-        char = self.chars["Snuggz"]
-        print(char["name"])
-        print(self.s1.GetActiveByRole("tank"))
-        print(len(self.s1.GetActiveByRole("tank")))
-        print(self.GetItemPrio(char["name"], 46032))
-        print(self.GetItemUsers(46032))
-        print(self.GetItemUsers(46046))
+    def GenerateRandomRosters(self):
+
+        rosters = [Roster(self.s1, self.chars, self.tmb, 0), Roster(self.s2, self.chars, self.tmb, 1), Roster(self.s3, self.chars, self.tmb, 2)]
+        signups = [self.s1, self.s2, self.s3]
+
+        self.AssignByRole(rosters, "tank", 2)
+        self.AssignByRole(rosters, "healer", 2)
+        self.AssignByRole(rosters, "dps", 6)
+
+        return rosters
+
+    def AssignByRole(self, rosters: "list[Roster]", role: str, min_amount: int):
+
+        # Start with roster with the fewer signups
+        rosters.sort(key=lambda x : len(x.signup.GetActivePlayers()))
+
+        for r in rosters:
+            chars = r.signup.GetActiveCharsByRole(role)
+            chars_copy = chars.copy()
+
+            # Remove players already rostered
+            for p in chars_copy:
+                # Remove character if in other rosters
+                for roster in rosters:
+                    if p in roster and p in chars:
+                        chars.pop(p)
+
+                # Remove char from this roster if in another char already
+                if r.ContainsPlayer(self.chars[p]['discord_id']) and p in chars:
+                    chars.pop(p)
+            
+            # Assign n of this role to this roster
+            for j in range(0, min_amount):
+                char_list = [t for t in chars]
+                if len(char_list) > 0:
+                    char_index = random.randrange(0, len(char_list))
+                    char = char_list[char_index]
+                    chars.pop(char)
+
+                    r.RosterChar(char, role)
+
+                    alts = self.chars.FindAlts(char)
+                    for alt in alts:
+                        if alt in chars:
+                            chars.pop(alt)
+
+    def CalcViabilityScore(self, rosters: "list[Roster]"):
+        score = 0
+
+        for i in range(0, len(rosters)):
+            r = rosters[i]
+            if self.CheckDoubleAlt(r):
+                print("Double alt found in roster ", i)
+
+        return score
+
+    def CheckDoubleAlt(self, roster: Roster):
+        
+        for c, _  in roster.items():
+            discord_id = self.chars[c]["discord_id"]
+            for c2, _  in roster.items():
+                if c != c2 and self.chars[c2]["discord_id"] == discord_id:
+                    return True
+                
+        return False
 
     def GetItemPrio(self, char_name, item_id):
         for _, char in self.tmb.items():
@@ -122,7 +230,16 @@ def main():
     args = parser.parse_args()
 
     rm = RosterMaster(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
-    rm.GenerateRosters()
+
+    for i in range(0, 100):
+        rosters = rm.GenerateRandomRosters()
+        if rosters:
+
+            for roster in rosters:
+                print(roster)
+
+            score = rm.CalcViabilityScore(rosters)
+            print("Rosters score:", score)
 
 if __name__ == "__main__":
     main()
