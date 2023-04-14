@@ -1,147 +1,24 @@
 
 import argparse
-import csv
 import json
 import random
+import common
 
 import tmb
-
-class CharacterBD:
-
-    def __init__(self, db_file):
-
-        with open(db_file, newline='') as csvfile:
-            reader = csv.DictReader(csvfile, fieldnames=["name", "class", "spec", "tank", "healer", "dps", "r1", "r2", "r3", "discord_id"])
-            self.chars = {}
-
-            # Skip 4 header rows
-            for i in range(0, 4):
-                reader.__next__()
-
-            for row in reader:
-                if row["name"]:
-                    
-                    char = {"name" : row["name"], "class" : row["class"], "discord_id" : row["discord_id"]}
-
-                    for role in ["tank", "healer", "dps"]:
-                        char[role] = True if row[role] == "MS" or row[role] == "OS" else False
-
-                    self.chars[row["name"]] = char
-                else:
-                    return
-                
-    def __getitem__(self, key):
-        return self.chars[key]
-    
-    def items(self):
-        return self.chars.items()
-                
-    def FindCharacters(self, discord_id):
-        chars = {}
-        for _, char in self.chars.items():
-            if char["discord_id"] == discord_id:
-                chars[char["name"]] = char
-
-        return chars
-    
-    def FindAlts(self, char_name):
-        discord_id = self.chars[char_name]["discord_id"]
-        chars = self.FindCharacters(discord_id)
-        chars.pop(char_name)
-        return chars
-    
-class Signup:
-
-    def __init__(self, charDB, file):
-        self.charDB = charDB
-
-        data = json.load(open(file))
-        self.date = data["date"]
-        self.time = data["time"]
-        self.title = data["title"]
-
-        self.players = {}
-        self.active_players = {}
-        for player in data["signups"]:
-            p = {"discord_id" : player['userid'], "signup" : player["class"]}
-            self.players[p["discord_id"]] = p
-
-            if p["signup"] != "Absence":
-                self.active_players[p["discord_id"]] = p
-    
-    def CanPlayerRaid(self, discord_id):
-        return discord_id in self.active_players
-    
-    def GetActiveCharsByRole(self, role):
-        chars = {}
-        for _, c in self.charDB.chars.items():
-            if self.CanPlayerRaid(c["discord_id"]) and c[role]:
-                chars[c["name"]] = c
-        return chars
-    
-    def GetActiveChars(self):
-        chars = {}
-        for _, c in self.charDB.chars.items():
-            if self.CanRaid(c["discord_id"]):
-                chars[c["name"]] = c
-        return chars
-    
-    def GetActivePlayers(self):
-        return self.active_players
-    
-class Roster:
-
-    def __init__(self, signup : Signup, char_db, tmb, id):
-        self.roster = {}
-
-        self.signup = signup
-        self.chars = char_db
-        self.tmb = tmb
-        self.id = id
-
-    def __getitem__(self, key):
-        return self.roster[key]
-    
-    def __contains__(self, key):
-        return key in self.roster
-    
-    def items(self):
-        return self.roster.items()
-    
-    def __str__(self):
-        return str(self.roster)
-    
-    def RosterChar(self, char_name, role):
-        self.roster[char_name] = role
-    
-    def ContainsAlt(self, char_name):
-        discord_id = self.chars[char_name]['discord_id']
-        res, c = self.ContainsPlayer(discord_id)
-        return res and c['name'] != char_name
-
-    def ContainsPlayer(self, discord_id):
-        for c, r in self.roster.items():
-            if self.chars[c]['discord_id'] == discord_id:
-                return True, c
-        return False
-
-    def IsValid(self):
-        return len(self.roster) == 10
 
 class RosterMaster:
 
     def __init__(self, charDB_file, tmb_file, contested_items_file, r1_file, r2_file, r3_file):
-        self.chars = CharacterBD(charDB_file)
+        self.chars = common.CharacterBD(charDB_file)
         self.contested_items = json.load(open(contested_items_file))
         self.tmb = tmb.ReadDataFromJson(tmb.GetDataFromFile(tmb_file))
-        self.s1 = Signup(self.chars, r1_file)
-        self.s2 = Signup(self.chars, r2_file)
-        self.s3 = Signup(self.chars, r3_file)
+        self.s1 = common.Signup(self.chars, r1_file)
+        self.s2 = common.Signup(self.chars, r2_file)
+        self.s3 = common.Signup(self.chars, r3_file)
         
     def GenerateRandomRosters(self):
 
-        rosters = [Roster(self.s1, self.chars, self.tmb, 0), Roster(self.s2, self.chars, self.tmb, 1), Roster(self.s3, self.chars, self.tmb, 2)]
-        signups = [self.s1, self.s2, self.s3]
+        rosters = [common.Roster(self.s1, self.chars, self.tmb, 0), common.Roster(self.s2, self.chars, self.tmb, 1), common.Roster(self.s3, self.chars, self.tmb, 2)]
 
         self.AssignByRole(rosters, "tank", 2)
         self.AssignByRole(rosters, "healer", 2)
@@ -149,7 +26,10 @@ class RosterMaster:
 
         return rosters
 
-    def AssignByRole(self, rosters: "list[Roster]", role: str, min_amount: int):
+    def GenerateRandomRostersV2(self):
+        pass
+
+    def AssignByRole(self, rosters: "list[common.Roster]", role: str, min_amount: int):
 
         # Start with roster with the fewer signups
         rosters.sort(key=lambda x : len(x.signup.GetActivePlayers()))
@@ -179,22 +59,32 @@ class RosterMaster:
 
                     r.RosterChar(char, role)
 
+                    # Remove this player's alts from selectable chars
                     alts = self.chars.FindAlts(char)
                     for alt in alts:
                         if alt in chars:
                             chars.pop(alt)
 
-    def CalcViabilityScore(self, rosters: "list[Roster]"):
+    def CalcViabilityScore(self, rosters: "list[common.Roster]"):
         score = 0
+
+        # Global score
+        # Are the players who need contested items rostered, if they can raid?
 
         for i in range(0, len(rosters)):
             r = rosters[i]
-            if self.CheckDoubleAlt(r):
-                print("Double alt found in roster ", i)
+            
+            # Individual score
+            # 1. Is Valid? (Has enough players)
+            # 2. Has a soaker? Could create a custom role for this, auto assigned for every rogue and priest with a dps spec
+            # 2a. Has a shaman? Pretty much needed
+            # 3. Constested loot distribution. Two players need the same loot?
+            # 4. Class diversity? (Could be expanded to buff/debuff coverage)
+            # 5. (Extra) Has a MS effect to zug Freya?
 
         return score
 
-    def CheckDoubleAlt(self, roster: Roster):
+    def CheckDoubleAlt(self, roster: common.Roster):
         
         for c, _  in roster.items():
             discord_id = self.chars[c]["discord_id"]
