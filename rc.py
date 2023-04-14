@@ -1,6 +1,7 @@
 import argparse
 import json
 import math
+import colorama
 
 import tmb
 import common
@@ -35,10 +36,67 @@ class RosterChecker:
                     role = "dps" if dps else "healer" if i & 1 else "tank"
                     roster.RosterChar(char, role)
 
+    def CheckRosters(self):
+        for r in self.rosters:
+            r.print()
+            print("{0:<14s}Review {1}".format("", r.id))
+
+            self.CheckSoaker(r)
+            self.CheckContestedItems(r)
+            self.CheckSignups(r)
+            print()
+            
+    def CheckSoaker(self, roster: common.Roster):
+        soaker = roster.GetSoaker()
+        if soaker is None:
+            print("{}Error!!! Soaker not found!{}".format(common.bcolors.FAIL, common.bcolors.ENDC))
+
+    def CheckContestedItems(self, roster: common.Roster):
+        r = roster
+
+        # Contested items
+        for id, item in self.contested_items.items():
+            users = self.GetItemUsersInRoster(int(id), r)
+
+            if len(users) > 0:
+                print("Item {}({}) is covered by {} with {} prio".format(item["name"], id, users[0]["name"], users[0]["prio"]))
+            else:
+                print("{}WARNING!!! Item {}({}) is not covered by any char {}".format(common.bcolors.WARNING, item["name"], id, common.bcolors.ENDC))
+
+    def CheckSignups(self, roster: common.Roster):
+        active_players = roster.signup.GetActivePlayers()
+        for char in roster.roster:
+            discord_id = self.chars.GetDiscordId(char)
+            if discord_id not in active_players:
+                print("{}Error!!! Character {}({}) cannot raid this day {}".format(common.bcolors.FAIL, char, discord_id, common.bcolors.ENDC))
 
 
-# Check if there's a soaker
-# Check if contested items are covered
+    def GetItemPrio(self, char_name, item_id):
+        for _, char in self.tmb.items():
+            can_receive = item_id in char.wishlist and not char.wishlist[item_id]["is_received"]
+            if char.data["name"].lower() == char_name.lower() and can_receive:
+                return char.wishlist[item_id]["order"]
+        return -1
+    
+    def GetItemUsers(self, item_id):
+        users = []
+        for c in self.char.items():
+            if self.GetItemPrio(c["name"], item_id) > 0:
+                users.append(c)
+
+        return users
+    
+    def GetItemUsersInRoster(self, item_id, roster):
+        users = []
+        for c in roster.roster:
+            prio = self.GetItemPrio(c, item_id)
+            if prio > 0:
+                users.append({"name" : c, "prio" : prio})
+
+        users.sort(key=lambda x : x["prio"])
+        return users
+
+
 # Check if that player can raid in a given day
 # Check that there are not two chars of the player in the same raid    
 
@@ -56,8 +114,7 @@ def main():
 
     rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
     rc.ReadRosters(args.r)
-    for r in rc.rosters:
-        r.print()
+    rc.CheckRosters()
 
 if __name__ == "__main__":
     main()

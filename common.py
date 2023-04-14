@@ -1,6 +1,18 @@
 import csv
 import json
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
 class WoW:
 
     roles = ["tank", "healer", "dps"]
@@ -45,6 +57,9 @@ class CharacterBD:
                 chars[char["name"]] = char
 
         return chars
+    
+    def GetDiscordId(self, char_name):
+        return self.chars[char_name]['discord_id']
     
     def FindAlts(self, char_name):
         discord_id = self.chars[char_name]["discord_id"]
@@ -118,6 +133,8 @@ class Roster:
         self.PrintRole("dps")
         self.PrintRole("healer")
         self.PrintRole("tank")
+        soaker = self.GetSoaker()
+        print("Soaker: {}".format(soaker))
 
     def PrintRole(self, role):
         print("{0:<16s}{1}".format("", role))
@@ -157,3 +174,13 @@ class Roster:
 
     def IsValid(self):
         return len(self.roster) == 10
+    
+    def GetSoaker(self):
+        for c, r in self.roster.items():
+            char = self.chars[c]
+            if char['class'] == "Rogue" or (char['class'] == "Priest" and r == "dps"):
+                return char['name']
+        
+        return None
+
+

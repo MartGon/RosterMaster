@@ -94,20 +94,6 @@ class RosterMaster:
                 
         return False
 
-    def GetItemPrio(self, char_name, item_id):
-        for _, char in self.tmb.items():
-            if char.data["name"] == char_name and item_id in char.wishlist and not char.wishlist[item_id]["is_received"]:
-                return char.wishlist[item_id]["order"]
-        return -1
-    
-    def GetItemUsers(self, item_id):
-        users = []
-        for _, c in self.chars.items():
-            if self.GetItemPrio(c["name"], item_id) > 0:
-                users.append(c)
-
-        return users
-
 def main():
 
     parser = argparse.ArgumentParser(prog='RosterMaster', description='Creates a somewhat viable roster taking loot into account', epilog='Call with --help to find a list of available commands')
