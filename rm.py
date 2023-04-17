@@ -84,16 +84,6 @@ class RosterMaster:
 
         return score
 
-    def CheckDoubleAlt(self, roster: common.Roster):
-        
-        for c, _  in roster.items():
-            discord_id = self.chars[c]["discord_id"]
-            for c2, _  in roster.items():
-                if c != c2 and self.chars[c2]["discord_id"] == discord_id:
-                    return True
-                
-        return False
-
 def main():
 
     parser = argparse.ArgumentParser(prog='RosterMaster', description='Creates a somewhat viable roster taking loot into account', epilog='Call with --help to find a list of available commands')

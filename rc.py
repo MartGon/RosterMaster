@@ -44,6 +44,7 @@ class RosterChecker:
             self.CheckSoaker(r)
             self.CheckContestedItems(r)
             self.CheckSignups(r)
+            self.CheckSamePerson(r)
             print()
             
     def CheckSoaker(self, roster: common.Roster):
@@ -54,7 +55,6 @@ class RosterChecker:
     def CheckContestedItems(self, roster: common.Roster):
         r = roster
 
-        # Contested items
         for id, item in self.contested_items.items():
             users = self.GetItemUsersInRoster(int(id), r)
 
@@ -70,6 +70,15 @@ class RosterChecker:
             if discord_id not in active_players:
                 print("{}Error!!! Character {}({}) cannot raid this day {}".format(common.bcolors.FAIL, char, discord_id, common.bcolors.ENDC))
 
+    def CheckSamePerson(self, roster: common.Roster):
+        for c, _  in roster.items():
+            discord_id = self.chars[c]["discord_id"]
+            for c2, _  in roster.items():
+                if c != c2 and self.chars[c2]["discord_id"] == discord_id:
+                    print("{}Error!!! Player {} would be using two chars! {}".format(common.bcolors.FAIL, c, common.bcolors.ENDC))
+                    return True
+                
+        return False
 
     def GetItemPrio(self, char_name, item_id):
         for _, char in self.tmb.items():
@@ -97,8 +106,7 @@ class RosterChecker:
         return users
 
 
-# Check if that player can raid in a given day
-# Check that there are not two chars of the player in the same raid    
+# Check if a character has already been listed in any of the other rosters
 
 def main():
 
