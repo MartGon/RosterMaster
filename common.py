@@ -67,6 +67,12 @@ class CharacterBD:
         chars.pop(char_name)
         return chars
     
+    def GetPlayers(self):
+        players = {}
+        for char_name, char in self.chars.items():
+            players[char['discord_id']] = char_name
+        return players
+    
 class Signup:
 
     def __init__(self, charDB, file):
@@ -85,6 +91,9 @@ class Signup:
 
             if p["signup"] != "Absence":
                 self.active_players[p["discord_id"]] = p
+
+    def HasPlayerSignedUp(self, discord_id):
+        return discord_id in self.players
     
     def CanPlayerRaid(self, discord_id):
         return discord_id in self.active_players

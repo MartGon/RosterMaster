@@ -1,7 +1,6 @@
 import argparse
 import json
 import math
-import colorama
 
 import tmb
 import common
@@ -106,7 +105,8 @@ class RosterChecker:
         return users
 
 
-# Check if a character has already been listed in any of the other rosters
+# Check if a character has already been listed in any of the other rosters. Count char appereance
+
 
 def main():
 
