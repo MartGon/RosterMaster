@@ -45,6 +45,8 @@ class RosterChecker:
             self.CheckSignups(r)
             self.CheckSamePerson(r)
             print()
+
+        self.CheckDuplicates(self.rosters)
             
     def CheckSoaker(self, roster: common.Roster):
         soaker = roster.GetSoaker()
@@ -94,7 +96,7 @@ class RosterChecker:
 
         return users
     
-    def GetItemUsersInRoster(self, item_id, roster):
+    def GetItemUsersInRoster(self, item_id, roster: common.Roster):
         users = []
         for c in roster.roster:
             prio = self.GetItemPrio(c, item_id)
@@ -104,9 +106,21 @@ class RosterChecker:
         users.sort(key=lambda x : x["prio"])
         return users
 
+    def CheckDuplicates(self, rosters: "list[common.Roster]"):
 
-# Check if a character has already been listed in any of the other rosters. Count char appereance
+        size = len(rosters)
+        for i in range(0, size):
+            for j in range(i + 1, size):
+                
 
+                r1 = rosters[i]
+                r2 = rosters[j]
+                for c1 in r1.roster:
+                    for c2 in r2.roster:
+                        if c1 == c2:
+                            print("{}Error!!! Character {} has been rostered twice! {}".format(common.bcolors.FAIL, c1, common.bcolors.ENDC))
+
+# Change prints to log functions. There's some duplication
 
 def main():
 
