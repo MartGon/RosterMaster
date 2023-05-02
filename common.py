@@ -78,7 +78,7 @@ class Signup:
     def __init__(self, charDB, file):
         self.charDB = charDB
 
-        data = json.load(open(file))
+        data = json.load(open(file, encoding='utf8'))
         self.date = data["date"]
         self.time = data["time"]
         self.title = data["title"]
