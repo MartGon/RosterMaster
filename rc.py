@@ -42,6 +42,7 @@ class RosterChecker:
             print("{0:<14s}Review {1}".format("", r.id))
 
             self.CheckSoaker(r)
+            self.CheckShaman(r)
             self.CheckContestedItems(r)
             self.CheckSignups(r)
             self.CheckSamePerson(r)
@@ -53,6 +54,14 @@ class RosterChecker:
         soaker = roster.GetSoaker()
         if soaker is None:
             logging.error("Soaker not found!")
+
+    def CheckShaman(self, roster: common.Roster):
+        for c, r in roster.items():
+            char = self.chars[c]
+            if char["class"] == "Shaman":
+                return True
+
+        logging.warning("Shaman not found!")
 
     def CheckContestedItems(self, roster: common.Roster):
         r = roster
@@ -121,7 +130,6 @@ class RosterChecker:
                         if c1 == c2:
                             print("Character {} has been rostered twice!".format(c1))
 
-# Check for shamans
 # Calc some kind of class diversity score. Could go deeper and calc buffs
 
 def main():

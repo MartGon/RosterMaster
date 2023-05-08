@@ -106,7 +106,7 @@ class Signup:
 class Roster:
 
     def __init__(self, signup : Signup, char_db, tmb, id):
-        self.roster = {}
+        self.roster = {} # K = Char name, R = Role
 
         self.signup = signup
         self.chars = char_db
