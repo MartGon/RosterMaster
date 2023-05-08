@@ -1,6 +1,7 @@
 import argparse
 import json
 import math
+import logging
 
 import tmb
 import common
@@ -51,7 +52,7 @@ class RosterChecker:
     def CheckSoaker(self, roster: common.Roster):
         soaker = roster.GetSoaker()
         if soaker is None:
-            print("{}Error!!! Soaker not found!{}".format(common.bcolors.FAIL, common.bcolors.ENDC))
+            logging.error("Soaker not found!")
 
     def CheckContestedItems(self, roster: common.Roster):
         r = roster
@@ -60,23 +61,23 @@ class RosterChecker:
             users = self.GetItemUsersInRoster(int(id), r)
 
             if len(users) > 0:
-                print("Item {}({}) is covered by {} with {} prio".format(item["name"], id, users[0]["name"], users[0]["prio"]))
+                logging.info("Item {}({}) is covered by {} with {} prio".format(item["name"], id, users[0]["name"], users[0]["prio"]))
             else:
-                print("{}WARNING!!! Item {}({}) is not covered by any char {}".format(common.bcolors.WARNING, item["name"], id, common.bcolors.ENDC))
+                logging.warning("Item {}({}) is not covered by any char".format(item["name"], id))
 
     def CheckSignups(self, roster: common.Roster):
         active_players = roster.signup.GetActivePlayers()
         for char in roster.roster:
             discord_id = self.chars.GetDiscordId(char)
             if discord_id not in active_players:
-                print("{}Error!!! Character {}({}) cannot raid this day {}".format(common.bcolors.FAIL, char, discord_id, common.bcolors.ENDC))
+                logging.error("Character {}({}) cannot raid this day".format(char, discord_id))
 
     def CheckSamePerson(self, roster: common.Roster):
         for c, _  in roster.items():
             discord_id = self.chars[c]["discord_id"]
             for c2, _  in roster.items():
                 if c != c2 and self.chars[c2]["discord_id"] == discord_id:
-                    print("{}Error!!! Player {} would be using two chars! {}".format(common.bcolors.FAIL, c, common.bcolors.ENDC))
+                    print("Player {} would be using two chars!".format(c))
                     return True
                 
         return False
@@ -118,9 +119,10 @@ class RosterChecker:
                 for c1 in r1.roster:
                     for c2 in r2.roster:
                         if c1 == c2:
-                            print("{}Error!!! Character {} has been rostered twice! {}".format(common.bcolors.FAIL, c1, common.bcolors.ENDC))
+                            print("Character {} has been rostered twice!".format(c1))
 
-# Change prints to log functions. There's some duplication
+# Check for shamans
+# Calc some kind of class diversity score. Could go deeper and calc buffs
 
 def main():
 
@@ -133,6 +135,8 @@ def main():
     parser.add_argument("--r3", default="r3.json")
     parser.add_argument("-r", default="r.txt")
     args = parser.parse_args()
+
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
     rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
     rc.ReadRosters(args.r)
