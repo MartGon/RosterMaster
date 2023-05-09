@@ -34,6 +34,7 @@ class Report:
                 logging.info("Item {}({}) is covered by {} with {} prio".format(item["name"], id, char["name"], char["prio"]))
             else:
                 logging.warning("Item {}({}) is not covered by any char".format(item["name"], id))
+        print(self.class_diversity)
 
 class RosterChecker:
 
@@ -83,7 +84,7 @@ class RosterChecker:
         unavailable_chars = self.GetUnavailableChars(r)
         duplicated_players = self.GetDuplicatedPlayers(r)
         loot = self.GetLootCoverage(r)
-        class_diversity = None
+        class_diversity = self.GetClassDiversity(r)
 
         return Report(self.contested_items, r, player_amount, soaker, shaman, unavailable_chars, duplicated_players, loot, class_diversity)
 
@@ -171,7 +172,15 @@ class RosterChecker:
         return False
     
     def GetClassDiversity(self, roster: common.Roster):
-        pass
+        class_diversity = {}
+        for c, _  in roster.items():
+            class_ = self.chars[c]["class"]
+            if class_ not in class_diversity:
+                class_diversity[class_] = 1
+            else:
+                class_diversity[class_] = class_diversity[class_] + 1
+
+        return class_diversity
 
     def CalcViabilityScore(self, rosters: "list[common.Roster]"):
         score = 0
@@ -183,6 +192,7 @@ class RosterChecker:
             r = rosters[i]
             
             # Individual score
+            # Calculation should ignore geneartion method. Thus, it shoould make no assumptions
             # 1. Is Valid? (Has enough players)
             # 2. Has a soaker? Could create a custom role for this, auto assigned for every rogue and priest with a dps spec
             # 2a. Has a shaman? Pretty much needed
@@ -197,9 +207,6 @@ class RosterChecker:
         is_viable = r.GetShaman() is not None and r.GetSoaker() is not None and r.IsValid() is not None
         
         return is_viable and len(unavailable_chars) == 0
-    
-        
-
 
 # Calc some kind of class diversity score. Could go deeper and calc buffs
 # Calc score taking into account if a char is using its MS or OS
