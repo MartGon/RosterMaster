@@ -119,6 +119,9 @@ class Roster:
     def __contains__(self, key):
         return key in self.roster
     
+    """
+    Returns K = Char name, R = Role
+    """
     def items(self):
         return self.roster.items()
     
@@ -168,6 +171,9 @@ class Roster:
             if self.chars[c]['discord_id'] == discord_id:
                 return True, c
         return False
+    
+    def GetPlayerAmount(self):
+        return len(self.roster)
 
     def IsValid(self):
         return len(self.roster) == 10
@@ -178,6 +184,13 @@ class Roster:
             if char['class'] == "Rogue" or (char['class'] == "Priest" and r == "dps"):
                 return char['name']
         
+        return None
+    
+    def GetShaman(self):
+        for c, r in self.items():
+            char = self.chars[c]
+            if char["class"] == "Shaman":
+                return char
         return None
 
 

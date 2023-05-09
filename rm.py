@@ -65,25 +65,6 @@ class RosterMaster:
                         if alt in chars:
                             chars.pop(alt)
 
-    def CalcViabilityScore(self, rosters: "list[common.Roster]"):
-        score = 0
-
-        # Global score
-        # Are the players who need contested items rostered, if they can raid?
-
-        for i in range(0, len(rosters)):
-            r = rosters[i]
-            
-            # Individual score
-            # 1. Is Valid? (Has enough players)
-            # 2. Has a soaker? Could create a custom role for this, auto assigned for every rogue and priest with a dps spec
-            # 2a. Has a shaman? Pretty much needed
-            # 3. Constested loot distribution. Two players need the same loot?
-            # 4. Class diversity? (Could be expanded to buff/debuff coverage)
-            # 5. (Extra) Has a MS effect to zug Freya?
-
-        return score
-
 def main():
 
     parser = argparse.ArgumentParser(prog='RosterMaster', description='Creates a somewhat viable roster taking loot into account', epilog='Call with --help to find a list of available commands')
