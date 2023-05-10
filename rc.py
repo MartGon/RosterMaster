@@ -2,27 +2,29 @@ import argparse
 import json
 import math
 import logging
+import statistics
 
 import tmb
 import common
 
 class Report:
 
-    def __init__(self, contested_items, roster: common.Roster, player_amount, soaker, shaman, unavailable_chars: dict, duplicated_players: dict, loot: dict, class_diversity: dict):
+    def __init__(self, contested_items, roster: common.Roster, unavailable_chars: dict, duplicated_players: dict, loot: dict, class_diversity: dict):
         self.contested_items = contested_items
         self.roster = roster
-        self.player_amount = player_amount
-        self.soaker = soaker
-        self.shaman = shaman
         self.unavailable_chars = unavailable_chars
         self.duplicated_players = duplicated_players
+
         self.loot = loot
         self.class_diversity = class_diversity
 
+    def IsRaidViable(self):
+        return self.roster.IsValid() and self.roster.GetSoaker() and len(self.unavailable_chars) == 0 and len(self.duplicated_players) == 0
+
     def print(self):
-        if self.soaker is None:
+        if self.roster.GetSoaker() is None:
             logging.error("Soaker not found!")
-        if self.shaman is None:
+        if self.roster.GetShaman() is None:
             logging.error("Shaman not found")
         for c, char in self.unavailable_chars.items():
             logging.error("Character {}({}) cannot raid this day".format(c, char["discord_id"]))
@@ -34,7 +36,7 @@ class Report:
                 logging.info("Item {}({}) is covered by {} with {} prio".format(item["name"], id, char["name"], char["prio"]))
             else:
                 logging.warning("Item {}({}) is not covered by any char".format(item["name"], id))
-        print(self.class_diversity)
+        logging.info(self.class_diversity)
 
 class RosterChecker:
 
@@ -77,16 +79,17 @@ class RosterChecker:
 
         self.CheckDuplicates(self.rosters)
 
+        score, iscores = self.CalcViabilityScore(self.rosters)
+        print("Score: ", score)
+        print("Individual scores", iscores)
+
     def GenerateReport(self, r: common.Roster):
-        player_amount = r.GetPlayerAmount()
-        soaker = r.GetSoaker()
-        shaman = r.GetShaman()
         unavailable_chars = self.GetUnavailableChars(r)
         duplicated_players = self.GetDuplicatedPlayers(r)
         loot = self.GetLootCoverage(r)
         class_diversity = self.GetClassDiversity(r)
 
-        return Report(self.contested_items, r, player_amount, soaker, shaman, unavailable_chars, duplicated_players, loot, class_diversity)
+        return Report(self.contested_items, r, unavailable_chars, duplicated_players, loot, class_diversity)
 
     def GetUnavailableChars(self, roster: common.Roster):
         active_players = roster.signup.GetActivePlayers()
@@ -172,13 +175,13 @@ class RosterChecker:
         return False
     
     def GetClassDiversity(self, roster: common.Roster):
-        class_diversity = {}
-        for c, _  in roster.items():
+        class_diversity = {"dps": {}, "tank": {}, "healer": {}}
+        for c, role  in roster.items():
             class_ = self.chars[c]["class"]
-            if class_ not in class_diversity:
-                class_diversity[class_] = 1
+            if class_ not in class_diversity[role]:
+                class_diversity[role][class_] = 1
             else:
-                class_diversity[class_] = class_diversity[class_] + 1
+                class_diversity[role][class_] = class_diversity[role][class_] + 1
 
         return class_diversity
 
@@ -186,27 +189,42 @@ class RosterChecker:
         score = 0
 
         # Global score
-        # Are the players who need contested items rostered, if they can raid?
-
+        iscores = []
         for i in range(0, len(rosters)):
-            r = rosters[i]
             
-            # Individual score
-            # Calculation should ignore geneartion method. Thus, it shoould make no assumptions
-            # 1. Is Valid? (Has enough players)
-            # 2. Has a soaker? Could create a custom role for this, auto assigned for every rogue and priest with a dps spec
-            # 2a. Has a shaman? Pretty much needed
-            # 3. Constested loot distribution. Two players need the same loot?
-            # 4. Class diversity? (Could be expanded to buff/debuff coverage)
-            # 5. (Extra) Has a MS effect to zug Freya?
+            r = rosters[i]
+            report = self.GenerateReport(r)
 
-        return score
-    
-    def IsViable(self, r: common.Roster):
-        unavailable_chars = self.GetUnavailableChars(r)
-        is_viable = r.GetShaman() is not None and r.GetSoaker() is not None and r.IsValid() is not None
-        
-        return is_viable and len(unavailable_chars) == 0
+            iscore = 0
+            # Can we even raid with this roster?
+            if report.IsRaidViable():
+                iscore = 1000
+
+            # Is there a shaman?
+            if r.GetShaman():
+                iscore = iscore + 100
+
+            # Is item covered?
+            for id, char in report.loot.items():
+                if char:
+                    iscore = iscore + 250
+
+            # Reward class diversity
+            for role in report.class_diversity:
+                for _class, count in report.class_diversity[role].items():
+                    if _class != "Warlock" and _class != "Death Knight":
+                        mod = (10 - count) * 2.5
+                        iscore = iscore + mod
+
+            # Reward using main spec
+            for c, role in r.items():
+                if self.chars[c]["MS"] == role:
+                    iscore = iscore + 10
+            
+            iscores.append(iscore)
+
+        score = statistics.harmonic_mean(iscores)
+        return score, iscores
 
 # Calc some kind of class diversity score. Could go deeper and calc buffs
 # Calc score taking into account if a char is using its MS or OS

@@ -1,4 +1,6 @@
 __pycache__/
-*.json
+r*.json
+character-json.json
+contested-items.json
 *.csv
 *.txt
