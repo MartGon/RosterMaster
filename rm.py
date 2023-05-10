@@ -4,7 +4,7 @@ import json
 import random
 import common
 import logging
-import threading
+import multiprocessing
 
 import tmb
 
@@ -87,7 +87,7 @@ def main():
     rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
 
     # Multithreaded generation
-    lock = threading.Lock()
+    lock = multiprocessing.Lock()
     results = []
     def GenerateRoster(iterations):
         i_results = []
@@ -110,7 +110,7 @@ def main():
     workload = int(iterations / threads_amount)
     print("Each thread will generate: {} rosters", workload)
     for i in range(0, threads_amount):
-        thread = threading.Thread(target=GenerateRoster, kwargs={"iterations" : workload})
+        thread = multiprocessing.Process(target=GenerateRoster, kwargs={"iterations" : workload})
         thread.start()
         threads.append(thread)
 
