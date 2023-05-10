@@ -8,26 +8,47 @@
         "replenishment" : {"score" : 15, "provided_by" : ["Priest:Shadow", "Hunter:Survival", "Paladin:Retribution", "Warlock:Destruction", "Mage:Frost"]},
         "stats" : {"score" : 5, "provided_by" : ["Druid:Balance", "Druid:Feral", "Druid:Restoration"]},
         "str+agi" : {"score": 8, "provided_by" : ["Shaman:Elemental", "Shaman:Restoration", "Shaman:Enhancement", "Death Knight:Blood", "Death Knight:Frost", "Death Knight:Unholy"]},
-        "atk-pwr%" : {},
-        "mp5" : {},
-        "spell-crit" : {},
-        "stats%" : {},
-        "intellect" : {},
-        "dmg%" : {},
-        "melee-crit" : {},
-        "spell-haste" : {},
-        "armor" : {},
-        "spirit" : {},
-        "mit%" : {},
-        "melee-haste" : {},
-        "health" : {}
+        "atk-pwr%" : {"score": 8, "provided_by" : ["Death Knight:Blood", "Shaman:Enhancement", "Hunter:Marksmanship"]},
+        "mp5" : {"score": 4, "provided_by" : ["Paladin:Holy", "Paladin:Protection", "Paladin:Retribution", "Shaman:Elemental", "Shaman:Enhancement", "Shaman:Restoration"]},
+        "spell-crit" : {"score" : 10, "provided_by" : ["Shaman:Elemental", "Druid:Balance"]},
+        "stats%" : {"score" : 5, "provided_by" : ["Paladin:Holy", "Paladin:Protection", "Paladin:Retribution"]},
+        "intellect" : {"score": 3, "provided_by" : ["Mage:Frost", "Mage:Arcane", "Mage:Fire"]},
+        "dmg%" : {"score": 8, "provided_by" : ["Druid:Balance", "Hunter:Beast Mastery", "Paladin:Retribution"]},
+        "melee-crit" : {"score" : 8, "provided_by" : ["Druid:Feral", "Warrior:Fury"]},
+        "spell-haste" : {"score" : 15, "provided_by" : ["Shaman:Elemental", "Shaman:Restoration"]},
+        "armor" : {"score" : 3, "provided_by" : ["Paladin:Protection", "Paladin:Holy", "Shaman:Elemental", "Shaman:Restoration", "Shaman:Enhancement"]},
+        "spirit" : {"score" : 3, "provided_by" : ["Priest:Discipline", "Priest:Holy", "Priest:Shadow", "Warlock:Affliction"]},
+        "mit%" : {"score" : 6, "provided_by" : ["Priest:Discipline", "Paladin:Protection"]},
+        "melee-haste" : {"score":  10, "provided_by" : ["Death Knight:Frost", "Shaman:Enhancement"]},
+        "health" : {"score" : 10, "provided_by" : ["Warrior:Arms", "Warrior:Fury", "Warrior:Protection", "Warlock:Destruction"]}
     },
 
     "debuffs" : {
-
+        "major-arp" : {"score" : 7, "provided_by" : ["Warrior:Protection", "Warrior:Fury", "Warrior:Arms", "Rogue:Combat"]},
+        "crit" : {"score" : 6, "provided_by" : ["Shaman:Elemental", "Paladin:Retribution", "Rogue:Assasination"]},
+        "minor-arp" : {"score" : 5, "provided_by" : ["Druid:Balance", "Warlock:Destruction", "Warlock:Affliction", "Warlock:Demonology"]},
+        "spell-crit" : {"score" : 6, "provided_by" : ["Mage:Fire", "Mage:Frost", "Warlock:Affliction"]},
+        "phys-vuln" : {"score" : 4, "provided_by" : ["Warrior:Arms", "Rogue:Combat"]},
+        "spell-hit" : {"score" : 12, "provided_by" : ["Priest:Shadow", "Druid:Balance"]},
+        "bleed" : {"score" : 3, "provided_by" : ["Druid:Feral", "Warrior:Arms"]},
+        "spell-dmg" : {"score" : 12, "provided_by" : ["Death Knight:Unholy", "Warlock:Affliction", "Warlock:Demonology", "Warlock:Destruction", "Druid:Balance"]}
     },
 
     "externals" : {
 
+    },
+
+    "healer-rating" : {
+        "Paladin:Holy" : 10,
+        "Priest:Discipline" : 8,
+        "Shaman:Restoration" : 5,
+        "Druid:Restoration" : 5,
+        "Priest:Holy" : 4
+    },
+    "tank-rating" : {
+        "Paladin:Protection" : 10,
+        "Druid:Feral" : 6,
+        "Warrior:Protection" : 5,
+        "Death Knight:Blood" : 5
     }
 }
