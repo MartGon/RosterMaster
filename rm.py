@@ -87,8 +87,9 @@ def main():
     rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
 
     # Multithreaded generation
-    lock = multiprocessing.Lock()
-    results = []
+    mgr = multiprocessing.Manager()
+    lock = mgr.Lock()
+    results = mgr.list()
     def GenerateRoster(iterations):
         i_results = []
         for i in range(0, iterations):
@@ -98,9 +99,10 @@ def main():
                 res = {"rosters" : rosters, "score" : score, "iscores" : iscores}
                 i_results.append(res)
 
+        i_results.sort(key=lambda x : x["score"], reverse=True)
         lock.acquire()
-        for result in i_results:
-            results.append(result)
+        for i in range(0, 5):
+            results.append(i_results[i])
         lock.release()
 
     iterations = args.i
@@ -118,6 +120,7 @@ def main():
         thread.join()
 
     # Print results
+    print("Sorting results")
     results.sort(key=lambda x : x["score"], reverse=True)
     print("Top 5")
     for i in range(0, 5):
