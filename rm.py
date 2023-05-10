@@ -83,8 +83,9 @@ def main():
     rm = RosterMaster(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
     rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
 
+    # TODO: Multithreading. Only write operation is to the list
     results = []
-    for i in range(0, 1000):
+    for i in range(0, 10000):
         rosters = rm.GenerateRandomRosters()
         if rosters:
             score, iscores = rc.CalcViabilityScore(rosters)
@@ -96,10 +97,9 @@ def main():
     for i in range(0, 5):
         print("Rosters ", i)
         res = results[i]
-        rc.SetRosters(res["rosters"])
-        rc.CheckRosters()
+        rc.CheckRosters(res["rosters"])
         print()
-        input("Press Enter")
+        input("-------------- Press Enter --------------")
 
             
 

@@ -1,0 +1,33 @@
+{
+    "buffs" : {
+        "bloodlust" : {"score" : 100, "provided_by" : ["Shaman:Restoration", "Shaman:Enhancement", "Shaman:Elemental"]},
+        "stamina" : {"score" : 5, "provided_by" : ["Priest:Discipline", "Priest:Shadow", "Priest:Holy"]},
+        "atk-pwr" : {"score" : 10, "provided_by" : ["Paladin:Retribution", "Paladin:Holy", "Paladin:Protection", "Warrior:Protection", "Warrior:Fury", "Warrior:Arms"]},
+        "haste%" : {"score" : 12, "provided_by" : ["Druid:Balance", "Paladin:Retribution"]},
+        "spell-pwr" : {"score": 12, "provided_by" : ["Warlock:Demonology", "Shaman:Elemental"]},
+        "replenishment" : {"score" : 15, "provided_by" : ["Priest:Shadow", "Hunter:Survival", "Paladin:Retribution", "Warlock:Destruction", "Mage:Frost"]},
+        "stats" : {"score" : 5, "provided_by" : ["Druid:Balance", "Druid:Feral", "Druid:Restoration"]},
+        "str+agi" : {"score": 8, "provided_by" : ["Shaman:Elemental", "Shaman:Restoration", "Shaman:Enhancement", "Death Knight:Blood", "Death Knight:Frost", "Death Knight:Unholy"]},
+        "atk-pwr%" : {},
+        "mp5" : {},
+        "spell-crit" : {},
+        "stats%" : {},
+        "intellect" : {},
+        "dmg%" : {},
+        "melee-crit" : {},
+        "spell-haste" : {},
+        "armor" : {},
+        "spirit" : {},
+        "mit%" : {},
+        "melee-haste" : {},
+        "health" : {}
+    },
+
+    "debuffs" : {
+
+    },
+
+    "externals" : {
+
+    }
+}

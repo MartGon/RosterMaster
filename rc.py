@@ -50,7 +50,7 @@ class RosterChecker:
 
     def ReadRosters(self, roster_file):
 
-        self.rosters = [common.Roster(self.s1, self.chars, self.tmb, 0), common.Roster(self.s2, self.chars, self.tmb, 1), common.Roster(self.s3, self.chars, self.tmb, 2)]
+        rosters = [common.Roster(self.s1, self.chars, self.tmb, 0), common.Roster(self.s2, self.chars, self.tmb, 1), common.Roster(self.s3, self.chars, self.tmb, 2)]
         with open(roster_file, 'r') as f:
             dps = True
             for line in f:
@@ -63,16 +63,15 @@ class RosterChecker:
                     char = chars[i]
 
                     roster_index = math.floor(i / 2)
-                    roster = self.rosters[roster_index]
+                    roster = rosters[roster_index]
 
                     role = "dps" if dps else "healer" if i & 1 else "tank"
                     roster.RosterChar(char, role)
 
-    def SetRosters(self, rosters):
-        self.rosters = rosters
+        return rosters
 
-    def CheckRosters(self):
-        for r in self.rosters:
+    def CheckRosters(self, rosters):
+        for r in rosters:
             r.print()
             
             report = self.GenerateReport(r)
@@ -80,9 +79,9 @@ class RosterChecker:
             report.print()
             print()
 
-        self.CheckDuplicates(self.rosters)
+        self.CheckDuplicates(rosters)
 
-        score, iscores = self.CalcViabilityScore(self.rosters)
+        score, iscores = self.CalcViabilityScore(rosters)
         print("Score: ", score)
         print("Individual scores", iscores)
 
@@ -230,10 +229,12 @@ class RosterChecker:
 
         score = statistics.harmonic_mean(iscores)
         return score, iscores
-
-# Calc some kind of class diversity score. Could go deeper and calc buffs
-# Calc score taking into account if a char is using its MS or OS
-# Could also increase score if using a main char
+    
+# Alg. Notes
+# Punish same healer
+# Reward healers based on performance. Pala-DPriest is the best combination
+# Buff/Debuff approach
+# Punish if using char that didn't sign up (Inconvenient)
 
 def main():
 
@@ -250,8 +251,8 @@ def main():
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
     rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
-    rc.ReadRosters(args.r)
-    rc.CheckRosters()
+    rosters = rc.ReadRosters(args.r)
+    rc.CheckRosters(rosters)
 
 if __name__ == "__main__":
     main()

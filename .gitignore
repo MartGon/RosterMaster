@@ -1,5 +1,5 @@
 __pycache__/
-r*.json
+r[0-9].json
 character-json.json
 contested-items.json
 *.csv
