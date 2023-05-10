@@ -129,7 +129,7 @@ class Roster:
         return str(self.roster)
     
     def print(self):
-        print("{0:<14s}Roster {1}".format("", self.id))
+        print("{0:<6s}Roster {1}".format("", self.signup.title))
         self.PrintRole("dps")
         self.PrintRole("healer")
         self.PrintRole("tank")
@@ -142,7 +142,7 @@ class Roster:
         for i in range(0, len(role_chars), 2):
             char = role_chars[i]
             print("{0:<16s}\t".format(char), end='')
-            if i + 1 <= len(role_chars):
+            if i + 1 < len(role_chars):
                 char2 = role_chars[i + 1]
                 print("{0:<16s}".format(char2), end='')
             print()

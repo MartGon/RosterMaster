@@ -68,6 +68,9 @@ class RosterChecker:
                     role = "dps" if dps else "healer" if i & 1 else "tank"
                     roster.RosterChar(char, role)
 
+    def SetRosters(self, rosters):
+        self.rosters = rosters
+
     def CheckRosters(self):
         for r in self.rosters:
             r.print()
@@ -220,6 +223,8 @@ class RosterChecker:
             for c, role in r.items():
                 if self.chars[c]["MS"] == role:
                     iscore = iscore + 10
+
+            # Consider melee and caster balance
             
             iscores.append(iscore)
 

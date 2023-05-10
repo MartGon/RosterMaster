@@ -3,8 +3,11 @@ import argparse
 import json
 import random
 import common
+import logging
 
 import tmb
+
+from rc import RosterChecker
 
 class RosterMaster:
 
@@ -76,17 +79,29 @@ def main():
     parser.add_argument("--contested-items", default="contested-items.json")
     args = parser.parse_args()
 
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
     rm = RosterMaster(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
+    rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
 
-    for i in range(0, 100):
+    results = []
+    for i in range(0, 1000):
         rosters = rm.GenerateRandomRosters()
         if rosters:
+            score, iscores = rc.CalcViabilityScore(rosters)
+            res = {"rosters" : rosters, "score" : score, "iscores" : iscores}
+            results.append(res)
 
-            for roster in rosters:
-                print(roster)
+    results.sort(key=lambda x : x["score"], reverse=True)
+    print("Top 5")
+    for i in range(0, 5):
+        print("Rosters ", i)
+        res = results[i]
+        rc.SetRosters(res["rosters"])
+        rc.CheckRosters()
+        print()
+        input("Press Enter")
 
-            score = rm.CalcViabilityScore(rosters)
-            print("Rosters score:", score)
+            
 
 if __name__ == "__main__":
     main()
