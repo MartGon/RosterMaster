@@ -242,15 +242,15 @@ def main():
     parser.add_argument("--characters-db", default="characters-db.csv")
     parser.add_argument("--tmb-file", default="character-json.json")
     parser.add_argument("--contested-items", default="contested-items.json")
-    parser.add_argument("--r1", default="r1.json")
-    parser.add_argument("--r2", default="r2.json")
-    parser.add_argument("--r3", default="r3.json")
+    parser.add_argument("--s1", default="s1.json")
+    parser.add_argument("--s2", default="s2.json")
+    parser.add_argument("--s3", default="s3.json")
     parser.add_argument("-r", default="r.txt")
     args = parser.parse_args()
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
-    rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
+    rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
     rosters = rc.ReadRosters(args.r)
     rc.CheckRosters(rosters)
 
