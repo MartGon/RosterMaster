@@ -4,6 +4,7 @@ import json
 import random
 import common
 import logging
+import threading
 
 import tmb
 
@@ -77,21 +78,46 @@ def main():
     parser.add_argument("--r2", default="r2.json")
     parser.add_argument("--r3", default="r3.json")
     parser.add_argument("--contested-items", default="contested-items.json")
+    parser.add_argument("-i", default=10000, type=int)
+    parser.add_argument("-j", default=8, type=int)
     args = parser.parse_args()
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
     rm = RosterMaster(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
     rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.r1, args.r2, args.r3)
 
-    # TODO: Multithreading. Only write operation is to the list
+    # Multithreaded generation
+    lock = threading.Lock()
     results = []
-    for i in range(0, 10000):
-        rosters = rm.GenerateRandomRosters()
-        if rosters:
-            score, iscores = rc.CalcViabilityScore(rosters)
-            res = {"rosters" : rosters, "score" : score, "iscores" : iscores}
-            results.append(res)
+    def GenerateRoster(iterations):
+        i_results = []
+        for i in range(0, iterations):
+            rosters = rm.GenerateRandomRosters()
+            if rosters:
+                score, iscores = rc.CalcViabilityScore(rosters)
+                res = {"rosters" : rosters, "score" : score, "iscores" : iscores}
+                i_results.append(res)
 
+        lock.acquire()
+        for result in i_results:
+            results.append(result)
+        lock.release()
+
+    iterations = args.i
+    threads_amount = args.j
+    
+    threads = []
+    workload = int(iterations / threads_amount)
+    print("Each thread will generate: {} rosters", workload)
+    for i in range(0, threads_amount):
+        thread = threading.Thread(target=GenerateRoster, kwargs={"iterations" : workload})
+        thread.start()
+        threads.append(thread)
+
+    for thread in threads:
+        thread.join()
+
+    # Print results
     results.sort(key=lambda x : x["score"], reverse=True)
     print("Top 5")
     for i in range(0, 5):

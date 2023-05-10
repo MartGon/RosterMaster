@@ -27,6 +27,8 @@ class CharacterBD:
 
                         if row[role] == "MS":
                             char["MS"] = role
+                        elif row[role] == "OS":
+                            char["OS"] = role
 
                     self.chars[row["name"]] = char
                 else:
