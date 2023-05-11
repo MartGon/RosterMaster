@@ -78,6 +78,7 @@ def main():
     parser.add_argument("--s2", default="s2.json")
     parser.add_argument("--s3", default="s3.json")
     parser.add_argument("--contested-items", default="contested-items.json")
+    parser.add_argument("-o", default="out.txt")
     parser.add_argument("-i", default=10000, type=int)
     parser.add_argument("-j", default=8, type=int)
     args = parser.parse_args()
@@ -125,10 +126,12 @@ def main():
     print("Top 5")
     for i in range(0, 5):
         print("Rosters ", i)
-        res = fresults[i]
-        rc.CheckRosters(res["rosters"])
+        rosters = fresults[i]['rosters']
+        rc.CheckRosters(rosters)
+        mode = 'w' if i == 0 else 'a'
+        rc.SaveRostersToFile(rosters, args.o, mode)
         print()
         input("-------------- Press Enter --------------")
-        
+
 if __name__ == "__main__":
     main()

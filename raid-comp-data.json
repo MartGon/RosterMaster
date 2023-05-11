@@ -29,7 +29,7 @@
         "minor-arp" : {"score" : 5, "provided_by" : ["Druid:Balance", "Warlock:Destruction", "Warlock:Affliction", "Warlock:Demonology"]},
         "spell-crit" : {"score" : 6, "provided_by" : ["Mage:Fire", "Mage:Frost", "Warlock:Affliction"]},
         "phys-vuln" : {"score" : 4, "provided_by" : ["Warrior:Arms", "Rogue:Combat"]},
-        "spell-hit" : {"score" : 12, "provided_by" : ["Priest:Shadow", "Druid:Balance"]},
+        "spell-hit" : {"score" : 20, "provided_by" : ["Priest:Shadow", "Druid:Balance"]},
         "bleed" : {"score" : 3, "provided_by" : ["Druid:Feral", "Warrior:Arms"]},
         "spell-dmg" : {"score" : 12, "provided_by" : ["Death Knight:Unholy", "Warlock:Affliction", "Warlock:Demonology", "Warlock:Destruction", "Druid:Balance"]}
     },

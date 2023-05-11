@@ -69,13 +69,45 @@ class RosterChecker:
                     roster.RosterChar(char, role)
 
         return rosters
+    
+    def SaveRostersToFile(self, rosters: "list[common.Roster]", out: str, mode = 'w'):
 
-    def CheckRosters(self, rosters):
+        with open(out, mode) as f:
+
+            # Print header
+            for r in rosters:
+                f.write("{}\t".format(r.signup.title))
+            f.write('\n')
+
+            # Print dps
+            for i in range(0, 3):
+                for r in rosters:
+                    dps = r.GetCharsByRole("dps")
+                    f.write("{}\t{}\t\t".format(dps[i*2], dps[i*2+1]))
+                f.write('\n')
+
+            # print header
+            for i in range(0, 3):
+                f.write("Tanks\tHeals\t\t")
+            f.write('\n')
+
+            # Print tanks and healers
+            for i in range(0, 2):
+                for r in rosters:
+                    tanks = r.GetCharsByRole("tank")
+                    heals = r.GetCharsByRole("healer")
+                    f.write("{}\t{}\t\t".format(tanks[i], heals[i]))
+                f.write('\n')
+            
+            f.write('\n')
+
+    def CheckRosters(self, rosters: "list[common.Roster]"):
+        
+        rosters.sort(key=lambda x : x.id)
         for r in rosters:
             r.print()
-            
             report = self.GenerateReport(r)
-            print("{0:<14s}Review {1}".format("", r.id))
+            print("{0:<14s}Review {1}".format("", r.signup.title))
             report.print()
             print()
 
@@ -116,21 +148,16 @@ class RosterChecker:
 
         return loot
 
-    def GetDuplicatedPlayers(self, roster: common.Roster):
-        duplicated_players = {}
-        for c, _  in roster.items():
-            discord_id = self.chars[c]["discord_id"]
-            for c2, _  in roster.items():
-                if c != c2 and self.chars[c2]["discord_id"] == discord_id:
-                    duplicated_players[discord_id] = c
-        
-        return duplicated_players
-
     def GetItemPrio(self, char_name, item_id):
         for _, char in self.tmb.items():
             can_receive = item_id in char.wishlist and not char.wishlist[item_id]["is_received"]
             if char.data["name"].lower() == char_name.lower() and can_receive:
                 return char.wishlist[item_id]["order"]
+        
+        item = self.contested_items[str(item_id)]
+        if char_name in item["needed_by"]:
+            return 20
+
         return -1
     
     def GetItemUsers(self, item_id):
@@ -151,6 +178,16 @@ class RosterChecker:
         users.sort(key=lambda x : x["prio"])
         return users
     
+    def GetDuplicatedPlayers(self, roster: common.Roster):
+        duplicated_players = {}
+        for c, _  in roster.items():
+            discord_id = self.chars[c]["discord_id"]
+            for c2, _  in roster.items():
+                if c != c2 and self.chars[c2]["discord_id"] == discord_id:
+                    duplicated_players[discord_id] = c
+        
+        return duplicated_players
+
     def GetDuplicates(self, rosters: "list[common.Roster]"):
         
         duplicates = {}
@@ -246,6 +283,7 @@ def main():
     parser.add_argument("--s2", default="s2.json")
     parser.add_argument("--s3", default="s3.json")
     parser.add_argument("-r", default="r.txt")
+    parser.add_argument("-o", default="out.txt")
     args = parser.parse_args()
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -253,6 +291,7 @@ def main():
     rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
     rosters = rc.ReadRosters(args.r)
     rc.CheckRosters(rosters)
+    rc.SaveRostersToFile(rosters, args.o)
 
 if __name__ == "__main__":
     main()
