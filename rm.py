@@ -120,17 +120,15 @@ def main():
         thread.join()
 
     # Print results
-    print("Sorting results")
-    results.sort(key=lambda x : x["score"], reverse=True)
+    fresults = list(results)
+    fresults.sort(key=lambda x : x['score'], reverse=True)
     print("Top 5")
     for i in range(0, 5):
         print("Rosters ", i)
-        res = results[i]
+        res = fresults[i]
         rc.CheckRosters(res["rosters"])
         print()
         input("-------------- Press Enter --------------")
-
-            
-
+        
 if __name__ == "__main__":
     main()
