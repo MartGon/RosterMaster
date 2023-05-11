@@ -9,8 +9,10 @@ import common
 
 class Report:
 
-    def __init__(self, contested_items, roster: common.Roster, unavailable_chars: dict, duplicated_players: dict, loot: dict, class_diversity: dict):
+    def __init__(self, contested_items, inactive_chars : dict, roster: common.Roster, unavailable_chars: dict, duplicated_players: dict, loot: dict, class_diversity: dict):
         self.contested_items = contested_items
+        self.inactive_chars = inactive_chars
+        
         self.roster = roster
         self.unavailable_chars = unavailable_chars
         self.duplicated_players = duplicated_players
@@ -30,6 +32,9 @@ class Report:
             logging.error("Character {}({}) cannot raid this day".format(c, char["discord_id"]))
         for discord_id, c in self.duplicated_players.items():
             logging.error("Player {} would be using two chars!".format(c))
+        for c, char in self.roster.items():
+            if c in self.inactive_chars and self.inactive_chars[c]:
+                logging.warning("Using inactive char: {}".format(c))
         for id, char in self.loot.items():
             item = self.contested_items[id]
             if char:
@@ -40,8 +45,9 @@ class Report:
 
 class RosterChecker:
 
-    def __init__(self, charDB_file, tmb_file, contested_items_file, r1_file, r2_file, r3_file):
+    def __init__(self, charDB_file, inactive_chars, tmb_file, contested_items_file, r1_file, r2_file, r3_file):
         self.chars = common.CharacterBD(charDB_file)
+        self.inactive_chars = json.load(open(inactive_chars))
         self.contested_items = json.load(open(contested_items_file))
         self.tmb = tmb.ReadDataFromJson(tmb.GetDataFromFile(tmb_file))
         self.s1 = common.Signup(self.chars, r1_file)
@@ -60,7 +66,7 @@ class RosterChecker:
 
                 chars = line.split()
                 for i in range(0, len(chars)):
-                    char = chars[i]
+                    char = chars[i].trim()
 
                     roster_index = math.floor(i / 2)
                     roster = rosters[roster_index]
@@ -123,7 +129,7 @@ class RosterChecker:
         loot = self.GetLootCoverage(r)
         class_diversity = self.GetClassDiversity(r)
 
-        return Report(self.contested_items, r, unavailable_chars, duplicated_players, loot, class_diversity)
+        return Report(self.contested_items, self.inactive_chars, r, unavailable_chars, duplicated_players, loot, class_diversity)
 
     def GetUnavailableChars(self, roster: common.Roster):
         active_players = roster.signup.GetActivePlayers()
@@ -260,6 +266,11 @@ class RosterChecker:
                 if self.chars[c]["MS"] == role:
                     iscore = iscore + 10
 
+            # Punish using inactive chars
+            for c, role in r.items():
+                if c in self.inactive_chars:
+                    iscore = iscore - 50
+
             # Consider melee and caster balance
             
             iscores.append(iscore)
@@ -277,6 +288,7 @@ def main():
 
     parser = argparse.ArgumentParser(prog='RosterChecker', description='Checks the viability of a given set of rosters', epilog='Call with --help to find a list of available commands')
     parser.add_argument("--characters-db", default="characters-db.csv")
+    parser.add_argument("--inactive-chars", default='inactive-chars.json')
     parser.add_argument("--tmb-file", default="character-json.json")
     parser.add_argument("--contested-items", default="contested-items.json")
     parser.add_argument("--s1", default="s1.json")
@@ -288,7 +300,7 @@ def main():
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
-    rc = RosterChecker(args.characters_db, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
+    rc = RosterChecker(args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
     rosters = rc.ReadRosters(args.r)
     rc.CheckRosters(rosters)
     rc.SaveRostersToFile(rosters, args.o)

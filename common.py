@@ -20,7 +20,7 @@ class CharacterBD:
             for row in reader:
                 if row["name"]:
                     
-                    char = {"name" : row["name"], "class" : row["class"], "spec" : row["spec"], "offspec" : row["offspec"], "is_main" : row["is_main"], "discord_id" : row["discord_id"]}
+                    char = {"name" : row["name"].strip(), "class" : row["class"], "spec" : row["spec"], "offspec" : row["offspec"], "is_main" : row["is_main"], "discord_id" : row["discord_id"]}
 
                     for role in WoW.roles:
                         char[role] = True if row[role] == "MS" or row[role] == "OS" else False
@@ -30,7 +30,7 @@ class CharacterBD:
                         elif row[role] == "OS":
                             char["OS"] = role
 
-                    self.chars[row["name"]] = char
+                    self.chars[row["name"].strip()] = char
                 else:
                     return
                 
