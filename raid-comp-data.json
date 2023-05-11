@@ -50,5 +50,9 @@
         "Druid:Feral" : 6,
         "Warrior:Protection" : 5,
         "Death Knight:Blood" : 5
+    },
+    "dps-rating" : {
+        "Warlock:Affliction" : 10,
+        "Death Knight:Unholy" : 10
     }
 }

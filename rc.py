@@ -66,7 +66,7 @@ class RosterChecker:
 
                 chars = line.split()
                 for i in range(0, len(chars)):
-                    char = chars[i].trim()
+                    char = chars[i].strip()
 
                     roster_index = math.floor(i / 2)
                     roster = rosters[roster_index]
@@ -271,18 +271,22 @@ class RosterChecker:
                 if c in self.inactive_chars:
                     iscore = iscore - 50
 
+            # Punish same class healers
+            healers = r.GetCharsByRole('healer')
+            if self.chars[healers[0]]['class'] == self.chars[healers[1]]['class']:
+                iscore = iscore - 100
+
             # Consider melee and caster balance
-            
+
+            iscore = max(iscore, 0)            
             iscores.append(iscore)
 
         score = statistics.harmonic_mean(iscores)
         return score, iscores
     
 # Alg. Notes
-# Punish same healer
 # Reward healers based on performance. Pala-DPriest is the best combination
 # Buff/Debuff approach
-# Punish if using char that didn't sign up (Inconvenient)
 
 def main():
 
