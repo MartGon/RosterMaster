@@ -9,11 +9,12 @@ import common
 
 class Report:
 
-    def __init__(self, contested_items, inactive_chars : dict, roster: common.Roster, unavailable_chars: dict, duplicated_players: dict, loot: dict, class_diversity: dict):
+    def __init__(self, contested_items: dict, inactive_chars : dict, roster: common.Roster, covered_buffs : dict, unavailable_chars: dict, duplicated_players: dict, loot: dict, class_diversity: dict):
         self.contested_items = contested_items
         self.inactive_chars = inactive_chars
         
         self.roster = roster
+        self.covered_buffs = covered_buffs
         self.unavailable_chars = unavailable_chars
         self.duplicated_players = duplicated_players
 
@@ -43,9 +44,21 @@ class Report:
                 logging.warning("Item {}({}) is not covered by any char".format(item["name"], id))
         logging.info(self.class_diversity)
 
+        covered_buffs = []
+        for buff, is_covered in self.covered_buffs['buffs'].items():
+            if is_covered:
+                covered_buffs.append(buff)
+        logging.info("Buffs covered {}".format(covered_buffs))
+        covered_debuffs = []
+        for debuff, is_covered in self.covered_buffs['debuffs'].items():
+            if is_covered:
+                covered_debuffs.append(debuff)
+        logging.info("Debuffs covered {}".format(covered_debuffs))
+
 class RosterChecker:
 
-    def __init__(self, charDB_file, inactive_chars, tmb_file, contested_items_file, r1_file, r2_file, r3_file):
+    def __init__(self, raid_comp_data, charDB_file, inactive_chars, tmb_file, contested_items_file, r1_file, r2_file, r3_file):
+        self.raid_comp_data = json.load(open(raid_comp_data))
         self.chars = common.CharacterBD(charDB_file)
         self.inactive_chars = json.load(open(inactive_chars))
         self.contested_items = json.load(open(contested_items_file))
@@ -76,7 +89,7 @@ class RosterChecker:
 
         return rosters
     
-    def SaveRostersToFile(self, rosters: "list[common.Roster]", out: str, mode = 'w'):
+    def SaveRostersToFile(self, rosters: "list[common.Roster]", out: str, mode: str = 'w'):
 
         with open(out, mode) as f:
 
@@ -115,21 +128,24 @@ class RosterChecker:
             report = self.GenerateReport(r)
             print("{0:<14s}Review {1}".format("", r.signup.title))
             report.print()
+            buff_score, debuff_score = self.CalcBuffCoverageScore(report)
+            logging.info("Buff score: {} Debuff scoqre: {} Total: {}".format(buff_score, debuff_score, buff_score + debuff_score))
             print()
 
         self.CheckDuplicates(rosters)
 
-        score, iscores = self.CalcViabilityScore(rosters)
+        score, iscores = self.CalcViabilityScoreAlt(rosters)
         print("Score: ", score)
         print("Individual scores", iscores)
 
     def GenerateReport(self, r: common.Roster):
+        covered_buffs = self.GetCoveredBuffs(r)
         unavailable_chars = self.GetUnavailableChars(r)
         duplicated_players = self.GetDuplicatedPlayers(r)
         loot = self.GetLootCoverage(r)
         class_diversity = self.GetClassDiversity(r)
 
-        return Report(self.contested_items, self.inactive_chars, r, unavailable_chars, duplicated_players, loot, class_diversity)
+        return Report(self.contested_items, self.inactive_chars, r, covered_buffs, unavailable_chars, duplicated_players, loot, class_diversity)
 
     def GetUnavailableChars(self, roster: common.Roster):
         active_players = roster.signup.GetActivePlayers()
@@ -230,6 +246,54 @@ class RosterChecker:
 
         return class_diversity
 
+    def GetCoveredBuffs(self, roster: common.Roster) -> dict:
+        
+        covered_buffs = {}
+        for name, buff in self.raid_comp_data["buffs"].items():
+            covered_buffs[name] = self.IsBuffCovered(roster, buff)
+
+        covered_debuffs = {}
+        for name, debuff in self.raid_comp_data["debuffs"].items():
+            covered_debuffs[name] = self.IsBuffCovered(roster, debuff)
+
+        return {"buffs" : covered_buffs, "debuffs" : covered_debuffs}
+
+    def IsBuffCovered(self, roster: common.Roster, buff: dict) -> bool:
+        for c, r in roster.items():
+            spec = self.GetCharSpec(self.chars[c], r)
+            if spec in buff['provided_by']:
+                return True
+            
+        return False
+    
+    def GetCharSpec(self, char: dict, role: str) -> str:
+        class_ = char["class"]
+        class_spec = char['spec'] if char["MS"] == role else char['offspec']
+        return class_ + ":" + class_spec
+
+    def CalcBuffCoverageScore(self, report: Report):
+        buff_score = 0
+        for bname, is_covered in report.covered_buffs["buffs"].items():
+            if is_covered:
+                buff_score = buff_score + self.raid_comp_data["buffs"][bname]["score"]
+
+        debuff_score = 0
+        for bname, is_covered in report.covered_buffs["debuffs"].items():
+            if is_covered:
+                debuff_score = debuff_score + self.raid_comp_data["debuffs"][bname]["score"]
+
+        return buff_score, debuff_score
+
+    def CalcRoleScore(self, r: common.Roster, role: str):
+        role_chars = r.GetCharsByRole(role)
+        role_score = 0
+        for c in role_chars:
+            spec = self.GetCharSpec(self.chars[c], role)
+            role_score = role_score + self.raid_comp_data[role + "-rating"][spec]
+
+        return role_score
+
+
     def CalcViabilityScore(self, rosters: "list[common.Roster]"):
         score = 0
 
@@ -240,19 +304,12 @@ class RosterChecker:
             r = rosters[i]
             report = self.GenerateReport(r)
 
-            iscore = 0
-            # Can we even raid with this roster?
-            if report.IsRaidViable():
-                iscore = 1000
+            # Calc base score
+            iscore = self.CalcBaseViabilityScore(r, report)
 
             # Is there a shaman?
             if r.GetShaman():
                 iscore = iscore + 100
-
-            # Is item covered?
-            for id, char in report.loot.items():
-                if char:
-                    iscore = iscore + 250
 
             # Reward class diversity
             for role in report.class_diversity:
@@ -261,36 +318,86 @@ class RosterChecker:
                         mod = (10 - count) * 2.5
                         iscore = iscore + mod
 
-            # Reward using main spec
-            for c, role in r.items():
-                if self.chars[c]["MS"] == role:
-                    iscore = iscore + 10
-
-            # Punish using inactive chars
-            for c, role in r.items():
-                if c in self.inactive_chars:
-                    iscore = iscore - 50
-
             # Punish same class healers
             healers = r.GetCharsByRole('healer')
             if self.chars[healers[0]]['class'] == self.chars[healers[1]]['class']:
                 iscore = iscore - 100
 
             # Consider melee and caster balance
-
             iscore = max(iscore, 0)            
             iscores.append(iscore)
 
         score = statistics.harmonic_mean(iscores)
         return score, iscores
     
+    def CalcViabilityScoreAlt(self, rosters: "list[common.Roster]"):
+        score = 0
+
+        # Global score
+        iscores = []
+        for i in range(0, len(rosters)):
+            
+            r = rosters[i]
+            report = self.GenerateReport(r)
+
+            # Calc base score
+            iscore = self.CalcBaseViabilityScore(r, report)
+
+            # Punish same class healers/tanks
+            healers = r.GetCharsByRole('healer')
+            if self.chars[healers[0]]['class'] == self.chars[healers[1]]['class']:
+                iscore = iscore - 100
+            tanks = r.GetCharsByRole('tank')
+            if self.chars[tanks[0]]['class'] == self.chars[tanks[1]]['class']:
+                iscore = iscore - 100
+
+            # Calc buff/debuff coverage
+            buff_score, debuff_score = self.CalcBuffCoverageScore(report)
+            iscore = iscore + buff_score + debuff_score
+
+            # Calc roles score
+            tank_score = self.CalcRoleScore(r, "tank")
+            healer_score = self.CalcRoleScore(r, "healer")
+            iscore = iscore + tank_score + healer_score
+            logging.debug("Tank score: {} Healer score: {}".format(tank_score, healer_score))
+
+            # Consider melee and caster balance
+            iscore = max(iscore, 0)            
+            iscores.append(iscore)
+
+        score = statistics.harmonic_mean(iscores)
+        return score, iscores
+    
+    def CalcBaseViabilityScore(self, r: common.Roster, report: Report):
+        iscore = 0
+        # Can we even raid with this roster?
+        if report.IsRaidViable():
+            iscore = 1000
+
+        # Is item covered?
+        for id, char in report.loot.items():
+            if char:
+                iscore = iscore + 250
+
+        # Reward using main spec
+        for c, role in r.items():
+            if self.chars[c]["MS"] == role:
+                iscore = iscore + 10
+
+        # Punish using inactive chars
+        for c, role in r.items():
+            if c in self.inactive_chars:
+                iscore = iscore - 50
+
+        return iscore
+
 # Alg. Notes
-# Reward healers based on performance. Pala-DPriest is the best combination
-# Buff/Debuff approach
+# Consider providing a higher score for main character for short runs (Algalon runs)
 
 def main():
 
     parser = argparse.ArgumentParser(prog='RosterChecker', description='Checks the viability of a given set of rosters', epilog='Call with --help to find a list of available commands')
+    parser.add_argument("--raid-comp-data", default="raid-comp-data.json")
     parser.add_argument("--characters-db", default="characters-db.csv")
     parser.add_argument("--inactive-chars", default='inactive-chars.json')
     parser.add_argument("--tmb-file", default="character-json.json")
@@ -300,11 +407,12 @@ def main():
     parser.add_argument("--s3", default="s3.json")
     parser.add_argument("-r", default="r.txt")
     parser.add_argument("-o", default="out.txt")
+    parser.add_argument("-v", default=logging.INFO)
     args = parser.parse_args()
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
-    rc = RosterChecker(args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
+    rc = RosterChecker(args.raid_comp_data, args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
     rosters = rc.ReadRosters(args.r)
     rc.CheckRosters(rosters)
     rc.SaveRostersToFile(rosters, args.o)

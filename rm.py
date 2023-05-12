@@ -72,6 +72,7 @@ class RosterMaster:
 def main():
 
     parser = argparse.ArgumentParser(prog='RosterMaster', description='Creates a somewhat viable roster taking loot into account', epilog='Call with --help to find a list of available commands')
+    parser.add_argument("--raid-comp-data", default="raid-comp-data.json")
     parser.add_argument("--characters-db", default="characters-db.csv")
     parser.add_argument("--inactive-chars", default='inactive-chars.json')
     parser.add_argument("--tmb-file", default="character-json.json")
@@ -86,7 +87,7 @@ def main():
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
     rm = RosterMaster(args.characters_db, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
-    rc = RosterChecker(args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
+    rc = RosterChecker(args.raid_comp_data, args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
 
     # Multithreaded generation
     mgr = multiprocessing.Manager()

@@ -25,7 +25,7 @@
 
     "debuffs" : {
         "major-arp" : {"score" : 7, "provided_by" : ["Warrior:Protection", "Warrior:Fury", "Warrior:Arms", "Rogue:Combat"]},
-        "crit" : {"score" : 6, "provided_by" : ["Shaman:Elemental", "Paladin:Retribution", "Rogue:Assasination"]},
+        "crit" : {"score" : 6, "provided_by" : ["Shaman:Elemental", "Paladin:Retribution", "Paladin:Protection", "Rogue:Assasination"]},
         "minor-arp" : {"score" : 5, "provided_by" : ["Druid:Balance", "Warlock:Destruction", "Warlock:Affliction", "Warlock:Demonology"]},
         "spell-crit" : {"score" : 6, "provided_by" : ["Mage:Fire", "Mage:Frost", "Warlock:Affliction"]},
         "phys-vuln" : {"score" : 4, "provided_by" : ["Warrior:Arms", "Rogue:Combat"]},
@@ -39,17 +39,17 @@
     },
 
     "healer-rating" : {
-        "Paladin:Holy" : 10,
-        "Priest:Discipline" : 8,
-        "Shaman:Restoration" : 5,
-        "Druid:Restoration" : 5,
-        "Priest:Holy" : 4
+        "Paladin:Holy" : 100,
+        "Priest:Discipline" : 80,
+        "Shaman:Restoration" : 50,
+        "Druid:Restoration" : 50,
+        "Priest:Holy" : 40
     },
     "tank-rating" : {
-        "Paladin:Protection" : 10,
-        "Druid:Feral" : 6,
-        "Warrior:Protection" : 5,
-        "Death Knight:Blood" : 5
+        "Paladin:Protection" : 100,
+        "Druid:Feral" : 60,
+        "Warrior:Protection" : 50,
+        "Death Knight:Blood" : 50
     },
     "dps-rating" : {
         "Warlock:Affliction" : 10,
