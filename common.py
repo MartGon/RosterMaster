@@ -20,7 +20,7 @@ class CharacterBD:
             for row in reader:
                 if row["name"]:
                     
-                    char = {"name" : row["name"].strip(), "class" : row["class"], "spec" : row["spec"], "offspec" : row["offspec"], "is_main" : row["is_main"], "discord_id" : row["discord_id"]}
+                    char = {"name" : row["name"].strip(), "class" : row["class"], "spec" : row["spec"], "offspec" : row["offspec"], "is_main" : True if row["is_main"] == 'TRUE' else False, "discord_id" : row["discord_id"]}
 
                     for role in WoW.roles:
                         char[role] = True if row[role] == "MS" or row[role] == "OS" else False
@@ -104,6 +104,10 @@ class Signup:
     
     def GetActivePlayers(self):
         return self.active_players
+
+    def IsShortRun(self):
+        title = self.title.lower()
+        return "algalon" in title or "wed" in title
     
 class Roster:
 

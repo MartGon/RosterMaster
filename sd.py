@@ -6,11 +6,11 @@ import common
 
 class SlackerDetector:
 
-    def __init__(self, charDB_file, r1_file, r2_file, r3_file):
+    def __init__(self, charDB_file, s1_file, s2_file, s3_file):
         self.chars = common.CharacterBD(charDB_file)
-        self.s1 = common.Signup(self.chars, r1_file)
-        self.s2 = common.Signup(self.chars, r2_file)
-        self.s3 = common.Signup(self.chars, r3_file)
+        self.s1 = common.Signup(self.chars, s1_file)
+        self.s2 = common.Signup(self.chars, s2_file)
+        self.s3 = common.Signup(self.chars, s3_file)
 
     def GetSlackersPerSignup(self):
         slackers = {}
@@ -53,12 +53,12 @@ def main():
 
     parser = argparse.ArgumentParser(prog='SlcakerDetector', description='Checks for player that didnt sign up', epilog='Call with --help to find a list of available commands')
     parser.add_argument("--characters-db", default="characters-db.csv")
-    parser.add_argument("--r1", default="r1.json")
-    parser.add_argument("--r2", default="r2.json")
-    parser.add_argument("--r3", default="r3.json")
+    parser.add_argument("--s1", default="s1.json")
+    parser.add_argument("--s2", default="s2.json")
+    parser.add_argument("--s3", default="s3.json")
     args = parser.parse_args()
 
-    sd = SlackerDetector(args.characters_db, args.r1, args.r2, args.r3)
+    sd = SlackerDetector(args.characters_db, args.s1, args.s2, args.s3)
     slackers = sd.GetSlackersPerSignup()
     for signup, slackers in slackers.items():
         print(signup)

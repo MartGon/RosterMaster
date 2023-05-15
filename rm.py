@@ -98,7 +98,7 @@ def main():
         for i in range(0, iterations):
             rosters = rm.GenerateRandomRosters()
             if rosters:
-                score, iscores = rc.CalcViabilityScore(rosters)
+                score, iscores = rc.CalcViabilityScoreAlt(rosters)
                 res = {"rosters" : rosters, "score" : score, "iscores" : iscores}
                 i_results.append(res)
 
@@ -129,11 +129,15 @@ def main():
     for i in range(0, 5):
         print("Rosters ", i)
         rosters = fresults[i]['rosters']
-        rc.CheckRosters(rosters)
-        mode = 'w' if i == 0 else 'a'
-        rc.SaveRostersToFile(rosters, args.o, mode)
-        print()
-        input("-------------- Press Enter --------------")
+        if rc.AreRostersValid(rosters):
+            rc.CheckRosters(rosters)
+            mode = 'w' if i == 0 else 'a'
+            rc.SaveRostersToFile(rosters, args.o, mode)
+            print()
+            input("-------------- Press Enter --------------")
+        else:
+            print("Rosters were not valid! There are not enough players to make 3 raids!")
+            break
 
 if __name__ == "__main__":
     main()

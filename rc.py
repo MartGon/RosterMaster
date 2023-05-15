@@ -25,6 +25,9 @@ class Report:
         return self.roster.IsValid() and self.roster.GetSoaker() and len(self.unavailable_chars) == 0 and len(self.duplicated_players) == 0
 
     def print(self):
+        short_run = self.roster.signup.IsShortRun()
+        if short_run:
+            logging.info("Short run: {}".format(short_run))
         if self.roster.GetSoaker() is None:
             logging.error("Soaker not found!")
         if self.roster.GetShaman() is None:
@@ -119,6 +122,12 @@ class RosterChecker:
                 f.write('\n')
             
             f.write('\n')
+
+    def AreRostersValid(self, rosters: "list[common.Roster]"):
+        for r in rosters:
+            if not r.IsValid():
+                return False
+        return True
 
     def CheckRosters(self, rosters: "list[common.Roster]"):
         
@@ -293,7 +302,6 @@ class RosterChecker:
 
         return role_score
 
-
     def CalcViabilityScore(self, rosters: "list[common.Roster]"):
         score = 0
 
@@ -318,11 +326,6 @@ class RosterChecker:
                         mod = (10 - count) * 2.5
                         iscore = iscore + mod
 
-            # Punish same class healers
-            healers = r.GetCharsByRole('healer')
-            if self.chars[healers[0]]['class'] == self.chars[healers[1]]['class']:
-                iscore = iscore - 100
-
             # Consider melee and caster balance
             iscore = max(iscore, 0)            
             iscores.append(iscore)
@@ -336,20 +339,13 @@ class RosterChecker:
         # Global score
         iscores = []
         for i in range(0, len(rosters)):
-            
             r = rosters[i]
             report = self.GenerateReport(r)
 
             # Calc base score
             iscore = self.CalcBaseViabilityScore(r, report)
-
-            # Punish same class healers/tanks
-            healers = r.GetCharsByRole('healer')
-            if self.chars[healers[0]]['class'] == self.chars[healers[1]]['class']:
-                iscore = iscore - 100
-            tanks = r.GetCharsByRole('tank')
-            if self.chars[tanks[0]]['class'] == self.chars[tanks[1]]['class']:
-                iscore = iscore - 100
+            if iscore >= 0:
+                return 0, [0, 0, 0]
 
             # Calc buff/debuff coverage
             buff_score, debuff_score = self.CalcBuffCoverageScore(report)
@@ -373,6 +369,8 @@ class RosterChecker:
         # Can we even raid with this roster?
         if report.IsRaidViable():
             iscore = 1000
+        else:
+            return 0
 
         # Is item covered?
         for id, char in report.loot.items():
@@ -384,10 +382,24 @@ class RosterChecker:
             if self.chars[c]["MS"] == role:
                 iscore = iscore + 10
 
+        # Reward using main chars on a short run
+        if r.signup.IsShortRun():
+            for c, role in r.items():
+                if self.chars[c]["is_main"]:
+                    iscore = iscore + 10
+
         # Punish using inactive chars
         for c, role in r.items():
             if c in self.inactive_chars:
                 iscore = iscore - 50
+
+        # Punish same class healers/tanks
+        healers = r.GetCharsByRole('healer')
+        if self.chars[healers[0]]['class'] == self.chars[healers[1]]['class']:
+            iscore = iscore - 100
+        tanks = r.GetCharsByRole('tank')
+        if self.chars[tanks[0]]['class'] == self.chars[tanks[1]]['class']:
+            iscore = iscore - 100
 
         return iscore
 
