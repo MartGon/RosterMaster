@@ -109,6 +109,9 @@ class Signup:
         title = self.title.lower()
         return "algalon" in title or "wed" in title
     
+    def IsBenched(self, discord_id):
+        return self.players[discord_id]["signup"] == "Bench"
+    
 class Roster:
 
     def __init__(self, signup : Signup, char_db, tmb, id):

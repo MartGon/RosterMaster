@@ -54,5 +54,15 @@
     "dps-rating" : {
         "Warlock:Affliction" : 10,
         "Death Knight:Unholy" : 10
+    },
+
+    "misc" : {
+        "item-covered" : 250,
+        "main-spec" : 5,
+        "main-in-short-run" : 10,
+        "inactive-char" : -25,
+        "benched-char" : -5,
+        "same-healer" : -100,
+        "same-tank" : -50
     }
 }

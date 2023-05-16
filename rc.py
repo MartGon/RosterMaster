@@ -344,7 +344,7 @@ class RosterChecker:
 
             # Calc base score
             iscore = self.CalcBaseViabilityScore(r, report)
-            if iscore >= 0:
+            if iscore <= 0:
                 return 0, [0, 0, 0]
 
             # Calc buff/debuff coverage
@@ -375,36 +375,40 @@ class RosterChecker:
         # Is item covered?
         for id, char in report.loot.items():
             if char:
-                iscore = iscore + 250
+                iscore = iscore + self.raid_comp_data["misc"]["item-covered"]
 
-        # Reward using main spec
         for c, role in r.items():
-            if self.chars[c]["MS"] == role:
-                iscore = iscore + 10
+            char = self.chars[c]
 
-        # Reward using main chars on a short run
-        if r.signup.IsShortRun():
-            for c, role in r.items():
-                if self.chars[c]["is_main"]:
-                    iscore = iscore + 10
+            # Reward using main spec
+            if char["MS"] == role:
+                iscore = iscore + self.raid_comp_data["misc"]["main-spec"]
 
-        # Punish using inactive chars
-        for c, role in r.items():
+            # Reward using main chars on a short run
+            if r.signup.IsShortRun():
+                if char["is_main"]:
+                    iscore = iscore + self.raid_comp_data["misc"]["main-in-short-run"]
+
+            # Punish using inactive chars
             if c in self.inactive_chars:
-                iscore = iscore - 50
+                iscore = iscore + self.raid_comp_data["misc"]["inactive-char"]
+        
+            # Punish using benched players
+            if r.signup.IsBenched(char["discord_id"]):
+                iscore = iscore + self.raid_comp_data["misc"]["benched-char"]
 
         # Punish same class healers/tanks
         healers = r.GetCharsByRole('healer')
         if self.chars[healers[0]]['class'] == self.chars[healers[1]]['class']:
-            iscore = iscore - 100
+            iscore = iscore + self.raid_comp_data["misc"]["same-healer"]
         tanks = r.GetCharsByRole('tank')
         if self.chars[tanks[0]]['class'] == self.chars[tanks[1]]['class']:
-            iscore = iscore - 100
+            iscore = iscore + self.raid_comp_data["misc"]["same-tank"]
 
         return iscore
 
 # Alg. Notes
-# Consider providing a higher score for main character for short runs (Algalon runs)
+# Config file for score system
 
 def main():
 
