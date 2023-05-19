@@ -10,7 +10,7 @@ class CharacterBD:
     def __init__(self, db_file):
 
         with open(db_file, newline='') as csvfile:
-            reader = csv.DictReader(csvfile, fieldnames=["name", "class", "spec", "offspec", "tank", "healer", "dps", "r1", "r2", "r3", "is_main", "discord_id"])
+            reader = csv.DictReader(csvfile, fieldnames=["name", "class", "spec", "offspec", "tank", "healer", "dps", "r1", "r2", "r3", "is_main", "discord_user", "discord_id"])
             self.chars = {}
 
             # Skip 4 header rows
@@ -20,7 +20,8 @@ class CharacterBD:
             for row in reader:
                 if row["name"]:
                     
-                    char = {"name" : row["name"].strip(), "class" : row["class"], "spec" : row["spec"], "offspec" : row["offspec"], "is_main" : True if row["is_main"] == 'TRUE' else False, "discord_id" : row["discord_id"]}
+                    char = {"name" : row["name"].strip(), "class" : row["class"], "spec" : row["spec"], "offspec" : row["offspec"], 
+                    "is_main" : True if row["is_main"] == 'TRUE' else False, "discord_user" : row["discord_user"].strip(), "discord_id" : row["discord_id"]}
 
                     for role in WoW.roles:
                         char[role] = True if row[role] == "MS" or row[role] == "OS" else False

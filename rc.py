@@ -123,6 +123,15 @@ class RosterChecker:
             
             f.write('\n')
 
+    def PrintPingMessages(self, rosters: "list[common.Roster]"):
+
+        for r in rosters:
+            print(r.signup.title)
+
+            for c, r in r.items():
+                print('@' + self.chars[c]['discord_user'])
+            print()
+
     def AreRostersValid(self, rosters: "list[common.Roster]"):
         for r in rosters:
             if not r.IsValid():
@@ -432,6 +441,8 @@ def main():
     rosters = rc.ReadRosters(args.r)
     rc.CheckRosters(rosters)
     rc.SaveRostersToFile(rosters, args.o)
+    input("-------------- Press Enter --------------")
+    rc.PrintPingMessages(rosters)
 
 if __name__ == "__main__":
     main()
