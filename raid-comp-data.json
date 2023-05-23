@@ -62,6 +62,7 @@
         "main-in-short-run" : 10,
         "inactive-char" : -25,
         "benched-char" : -5,
+        "unsigned-char" : -3,
         "same-healer" : -100,
         "same-tank" : -50
     }

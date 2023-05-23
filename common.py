@@ -77,7 +77,7 @@ class Signup:
         self.players = {}
         self.active_players = {}
         for player in data["signups"]:
-            p = {"discord_id" : player['userid'], "signup" : player["class"]}
+            p = {"discord_id" : player['userid'], "signup" : player["class"], "spec" : player["spec"]}
             self.players[p["discord_id"]] = p
 
             if p["signup"] != "Absence":
@@ -96,7 +96,7 @@ class Signup:
                 chars[c["name"]] = c
         return chars
     
-    def GetActiveChars(self):
+    def GetActiveChars(self) -> dict: 
         chars = {}
         for _, c in self.charDB.chars.items():
             if self.CanRaid(c["discord_id"]):

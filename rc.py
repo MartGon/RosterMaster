@@ -45,7 +45,8 @@ class Report:
                 logging.info("Item {}({}) is covered by {} with {} prio".format(item["name"], id, char["name"], char["prio"]))
             else:
                 logging.warning("Item {}({}) is not covered by any char".format(item["name"], id))
-        logging.info(self.class_diversity)
+        logging.debug(self.class_diversity)
+        print()
 
         covered_buffs = []
         for buff, is_covered in self.covered_buffs['buffs'].items():
@@ -144,10 +145,16 @@ class RosterChecker:
         for r in rosters:
             r.print()
             report = self.GenerateReport(r)
+            print()
             print("{0:<14s}Review {1}".format("", r.signup.title))
             report.print()
             buff_score, debuff_score = self.CalcBuffCoverageScore(report)
             logging.info("Buff score: {} Debuff scoqre: {} Total: {}".format(buff_score, debuff_score, buff_score + debuff_score))
+
+            for c, r in r.items():
+                if not self.HasCharSignedUp(rosters, c):
+                    logging.warning("Using Character {} which didn't sing up".format(c))
+
             print()
 
         self.CheckDuplicates(rosters)
@@ -284,6 +291,18 @@ class RosterChecker:
             
         return False
     
+    def HasCharSignedUp(self, rosters: "list[common.Roster]", char: str):
+        for r in rosters:
+            char_data = self.chars[char]
+            discord_id = char_data['discord_id']
+            if discord_id in r.signup.active_players:
+                spec = r.signup.active_players[discord_id]['spec']
+                if char_data['spec'] in spec:
+                    return True
+                
+        return False
+
+    
     def GetCharSpec(self, char: dict, role: str) -> str:
         class_ = char["class"]
         class_spec = char['spec'] if char["MS"] == role else char['offspec']
@@ -322,7 +341,7 @@ class RosterChecker:
             report = self.GenerateReport(r)
 
             # Calc base score
-            iscore = self.CalcBaseViabilityScore(r, report)
+            iscore = self.CalcBaseViabilityScore(rosters, r, report)
 
             # Is there a shaman?
             if r.GetShaman():
@@ -352,7 +371,7 @@ class RosterChecker:
             report = self.GenerateReport(r)
 
             # Calc base score
-            iscore = self.CalcBaseViabilityScore(r, report)
+            iscore = self.CalcBaseViabilityScore(rosters, r, report)
             if iscore <= 0:
                 return 0, [0, 0, 0]
 
@@ -373,7 +392,7 @@ class RosterChecker:
         score = statistics.harmonic_mean(iscores)
         return score, iscores
     
-    def CalcBaseViabilityScore(self, r: common.Roster, report: Report):
+    def CalcBaseViabilityScore(self, rosters: "list[common.Roster]", r: common.Roster, report: Report):
         iscore = 0
         # Can we even raid with this roster?
         if report.IsRaidViable():
@@ -397,6 +416,10 @@ class RosterChecker:
             if r.signup.IsShortRun():
                 if char["is_main"]:
                     iscore = iscore + self.raid_comp_data["misc"]["main-in-short-run"]
+
+            # Punish using char that dindt  sing up
+            if not self.HasCharSignedUp(rosters, c):
+                iscore = iscore - self.raid_comp_data["misc"]["unsigned-char"]
 
             # Punish using inactive chars
             if c in self.inactive_chars:
