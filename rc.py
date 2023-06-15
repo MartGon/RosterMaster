@@ -379,7 +379,8 @@ class RosterChecker:
             # Calc base score
             iscore = self.CalcBaseViabilityScore(rosters, r, report)
             if iscore <= 0:
-                return 0, [0, 0, 0]
+                iscores.append(0)
+                continue
 
             # Calc buff/debuff coverage
             buff_score, debuff_score = self.CalcBuffCoverageScore(report)
