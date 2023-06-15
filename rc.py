@@ -22,13 +22,14 @@ class Report:
         self.class_diversity = class_diversity
 
     def IsRaidViable(self):
-        return self.roster.IsValid() and self.roster.GetSoaker() and len(self.unavailable_chars) == 0 and len(self.duplicated_players) == 0
+        soaker_req = not self.roster.signup.RequiresSoaker() or (self.roster.signup.RequiresSoaker() and self.roster.GetSoaker())
+        return self.roster.IsValid() and soaker_req and len(self.unavailable_chars) == 0 and len(self.duplicated_players) == 0
 
     def print(self):
         short_run = self.roster.signup.IsShortRun()
         if short_run:
             logging.info("Short run: {}".format(short_run))
-        if self.roster.GetSoaker() is None:
+        if self.roster.signup.RequiresSoaker() and self.roster.GetSoaker() is None:
             logging.error("Soaker not found!")
         if self.roster.GetShaman() is None:
             logging.error("Shaman not found")
@@ -99,7 +100,12 @@ class RosterChecker:
 
             # Print header
             for r in rosters:
-                f.write("{}\t".format(r.signup.title))
+                f.write("{}\t\t\t".format(r.signup.title))
+            f.write('\n')
+
+            # Print grp header
+            for r in rosters:
+                f.write("G1\tG2\t\t")
             f.write('\n')
 
             # Print dps
@@ -463,7 +469,7 @@ def main():
     rc = RosterChecker(args.raid_comp_data, args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
     rosters = rc.ReadRosters(args.r)
     rc.CheckRosters(rosters)
-    rc.SaveRostersToFile(rosters, args.o)
+    #rc.SaveRostersToFile(rosters, args.o)
     input("-------------- Press Enter --------------")
     rc.PrintPingMessages(rosters)
 

@@ -110,6 +110,9 @@ class Signup:
         title = self.title.lower()
         return "algalon" in title or "wed" in title
     
+    def RequiresSoaker(self):
+        return "ulduar" in self.title.lower()
+    
     def IsBenched(self, discord_id):
         return self.players[discord_id]["signup"] == "Bench"
     
