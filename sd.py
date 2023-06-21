@@ -33,7 +33,9 @@ class SlackerDetector:
         players = self.chars.GetPlayers()
         for discord_id, char_name in players.items():
             for s in signups:
-                if s.HasPlayerSignedUp(discord_id) and discord_id in slackers:
+                has_quit = self.chars[char_name]['has_quit']
+                is_core = self.chars.GetMain(discord_id)
+                if (s.HasPlayerSignedUp(discord_id) or has_quit or is_core is None) and discord_id in slackers:
                     slackers.pop(discord_id)
         
         return slackers
@@ -67,17 +69,16 @@ def main():
             print(char_name)
         print()
 
-    print("The following players have not signed up for any raid")
-    slackers = sd.GetSlackers()
-    for _, slacker in slackers.items():
-        print(slacker)
-
-    print()
     print("The following players are not raiding in any day")
     slackers = sd.GetInactivePlayers()
     for _, slacker in slackers.items():
         print(slacker)
+    print()
 
+    print("The following players have not signed up for any raid")
+    slackers = sd.GetSlackers()
+    for _, slacker in slackers.items():
+        print("@{} ".format(sd.chars[slacker]['discord_user']))
 
 if __name__ == "__main__":
     main()

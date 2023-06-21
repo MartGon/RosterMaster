@@ -10,7 +10,7 @@ class CharacterBD:
     def __init__(self, db_file):
 
         with open(db_file, newline='') as csvfile:
-            reader = csv.DictReader(csvfile, fieldnames=["name", "class", "spec", "offspec", "tank", "healer", "dps", "r1", "r2", "r3", "is_main", "discord_user", "discord_id"])
+            reader = csv.DictReader(csvfile, fieldnames=["name", "class", "spec", "offspec", "tank", "healer", "dps", "r1", "r2", "r3", "is_main", "has_quit", "discord_user", "discord_id"])
             self.chars = {}
 
             # Skip 4 header rows
@@ -20,7 +20,7 @@ class CharacterBD:
             for row in reader:
                 if row["name"]:
                     
-                    char = {"name" : row["name"].strip(), "class" : row["class"], "spec" : row["spec"], "offspec" : row["offspec"], 
+                    char = {"name" : row["name"].strip(), "class" : row["class"], "spec" : row["spec"], "offspec" : row["offspec"], "has_quit" : True if row["has_quit"] == 'TRUE' else False,
                     "is_main" : True if row["is_main"] == 'TRUE' else False, "discord_user" : row["discord_user"].strip(), "discord_id" : row["discord_id"]}
 
                     for role in WoW.roles:
@@ -41,7 +41,7 @@ class CharacterBD:
     def items(self):
         return self.chars.items()
                 
-    def FindCharacters(self, discord_id):
+    def FindCharacters(self, discord_id: str):
         chars = {}
         for _, char in self.chars.items():
             if char["discord_id"] == discord_id:
@@ -49,10 +49,10 @@ class CharacterBD:
 
         return chars
     
-    def GetDiscordId(self, char_name):
+    def GetDiscordId(self, char_name: str):
         return self.chars[char_name]['discord_id']
     
-    def FindAlts(self, char_name):
+    def FindAlts(self, char_name: str):
         discord_id = self.chars[char_name]["discord_id"]
         chars = self.FindCharacters(discord_id)
         chars.pop(char_name)
@@ -63,6 +63,16 @@ class CharacterBD:
         for char_name, char in self.chars.items():
             players[char['discord_id']] = char_name
         return players
+    
+    def GetMain(self, discord_id: str):
+        for _, char in self.chars.items():
+            if char["discord_id"] == discord_id and char["is_main"]:
+                return char["name"]
+        return None
+    
+    def GetMainByAlt(self, char_name: str):
+        discord_id = self.chars[char_name]["discord_id"]
+        return self.GetMain(discord_id)
     
 class Signup:
 
