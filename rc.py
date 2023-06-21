@@ -9,10 +9,9 @@ import common
 
 class Report:
 
-    def __init__(self, contested_items: dict, inactive_chars : dict, roster: common.Roster, covered_buffs : dict, unavailable_chars: dict, duplicated_players: dict, loot: dict, class_diversity: dict):
-        self.contested_items = contested_items
-        self.inactive_chars = inactive_chars
-        
+    def __init__(self, roster_checker, roster: common.Roster, covered_buffs : dict, unavailable_chars: dict, duplicated_players: dict, loot: dict, class_diversity: dict):
+        self.roster_checker = roster_checker
+
         self.roster = roster
         self.covered_buffs = covered_buffs
         self.unavailable_chars = unavailable_chars
@@ -38,10 +37,10 @@ class Report:
         for discord_id, c in self.duplicated_players.items():
             logging.error("Player {} would be using two chars!".format(c))
         for c, char in self.roster.items():
-            if c in self.inactive_chars and self.inactive_chars[c]:
+            if c in self.roster_checker.inactive_chars and self.inactive_chars[c]:
                 logging.warning("Using inactive char: {}".format(c))
         for id, char in self.loot.items():
-            item = self.contested_items[id]
+            item = self.roster_checker.contested_items[id]
             if char:
                 logging.info("Item {}({}) is covered by {} with {} prio".format(item["name"], id, char["name"], char["prio"]))
             else:
@@ -59,6 +58,11 @@ class Report:
             if is_covered:
                 covered_debuffs.append(debuff)
         logging.info("Debuffs covered {}".format(covered_debuffs))
+
+        if self.roster.signup.RequiresMotalStrike():
+            covered, c = self.roster_checker.IsBuffCovered(self.roster, self.roster_checker.raid_comp_data['debuffs']['mortal-strike'])
+            logging.info("Mortal strike provided by {}".format(c))
+
 
 class RosterChecker:
 
@@ -176,7 +180,7 @@ class RosterChecker:
         loot = self.GetLootCoverage(r)
         class_diversity = self.GetClassDiversity(r)
 
-        return Report(self.contested_items, self.inactive_chars, r, covered_buffs, unavailable_chars, duplicated_players, loot, class_diversity)
+        return Report(self, r, covered_buffs, unavailable_chars, duplicated_players, loot, class_diversity)
 
     def GetUnavailableChars(self, roster: common.Roster):
         active_players = roster.signup.GetActivePlayers()
@@ -281,11 +285,11 @@ class RosterChecker:
         
         covered_buffs = {}
         for name, buff in self.raid_comp_data["buffs"].items():
-            covered_buffs[name] = self.IsBuffCovered(roster, buff)
+            covered_buffs[name] = self.IsBuffCovered(roster, buff)[0]
 
         covered_debuffs = {}
         for name, debuff in self.raid_comp_data["debuffs"].items():
-            covered_debuffs[name] = self.IsBuffCovered(roster, debuff)
+            covered_debuffs[name] = self.IsBuffCovered(roster, debuff)[0]
 
         return {"buffs" : covered_buffs, "debuffs" : covered_debuffs}
 
@@ -293,9 +297,14 @@ class RosterChecker:
         for c, r in roster.items():
             spec = self.GetCharSpec(self.chars[c], r)
             if spec in buff['provided_by']:
-                return True
+                return True, c
             
-        return False
+        return False, None
+    
+    def GetCharSpec(self, char: dict, role: str) -> str:
+        class_ = char["class"]
+        class_spec = char['spec'] if char["MS"] == role else char['offspec']
+        return class_ + ":" + class_spec
     
     def HasCharSignedUp(self, rosters: "list[common.Roster]", char: str):
         for r in rosters:
@@ -307,12 +316,6 @@ class RosterChecker:
                     return True
                 
         return False
-
-    
-    def GetCharSpec(self, char: dict, role: str) -> str:
-        class_ = char["class"]
-        class_spec = char['spec'] if char["MS"] == role else char['offspec']
-        return class_ + ":" + class_spec
 
     def CalcBuffCoverageScore(self, report: Report):
         buff_score = 0
@@ -411,6 +414,10 @@ class RosterChecker:
         for id, char in report.loot.items():
             if char:
                 iscore = iscore + self.raid_comp_data["misc"]["item-covered"]
+
+        # Requires mortal strike and is covered
+        if r.signup.RequiresMotalStrike() and self.IsBuffCovered(r, self.raid_comp_data["debuffs"]["mortal-strike"]):
+            iscore = iscore + self.raid_comp_data["misc"]["mortal-strike-covered"]
 
         for c, role in r.items():
             char = self.chars[c]

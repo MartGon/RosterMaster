@@ -31,7 +31,8 @@
         "phys-vuln" : {"score" : 4, "provided_by" : ["Warrior:Arms", "Rogue:Combat"]},
         "spell-hit" : {"score" : 20, "provided_by" : ["Priest:Shadow", "Druid:Balance"]},
         "bleed" : {"score" : 3, "provided_by" : ["Druid:Feral", "Warrior:Arms"]},
-        "spell-dmg" : {"score" : 12, "provided_by" : ["Death Knight:Unholy", "Warlock:Affliction", "Warlock:Demonology", "Warlock:Destruction", "Druid:Balance"]}
+        "spell-dmg" : {"score" : 12, "provided_by" : ["Death Knight:Unholy", "Warlock:Affliction", "Warlock:Demonology", "Warlock:Destruction", "Druid:Balance"]},
+        "mortal-strike" : {"score" : 5, "provided_by" : ["Warrior:Arms", "Warrior:Fury", "Rogue:Combat", "Hunter:Survival", "Hunter:Marksmanship"]}
     },
 
     "externals" : {
@@ -58,6 +59,7 @@
 
     "misc" : {
         "item-covered" : 250,
+        "mortal-strike-covered" : 25,
         "main-spec" : 5,
         "main-in-short-run" : 10,
         "inactive-char" : -25,

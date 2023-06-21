@@ -113,6 +113,9 @@ class Signup:
     def RequiresSoaker(self):
         return "ulduar" in self.title.lower()
     
+    def RequiresMotalStrike(self):
+        return "togc" in self.title.lower()
+    
     def IsBenched(self, discord_id):
         return self.players[discord_id]["signup"] == "Bench"
     
@@ -205,5 +208,3 @@ class Roster:
             if char["class"] == "Shaman":
                 return char
         return None
-
-
