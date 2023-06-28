@@ -35,10 +35,10 @@ class Report:
             logging.error("Shaman not found")
         for c, char in self.unavailable_chars.items():
             logging.error("Character {}({}) cannot raid this day".format(c, char["discord_id"]))
-        for discord_id, c in self.duplicated_players.items():
+        for _, c in self.duplicated_players.items():
             logging.error("Player {} would be using two chars!".format(c))
         for c, char in self.roster.items():
-            if c in self.roster_checker.inactive_chars and self.inactive_chars[c]:
+            if c in self.roster_checker.inactive_chars and self.roster_checker.inactive_chars[c]:
                 logging.warning("Using inactive char: {}".format(c))
         for id, char in self.loot.items():
             item = self.roster_checker.contested_items[id]
@@ -64,9 +64,7 @@ class Report:
             covered, c = self.roster_checker.IsBuffCovered(self.roster, self.roster_checker.raid_comp_data['debuffs']['mortal-strike'])
             logging.info("Mortal strike provided by {}".format(c))
 
-        logging.info("Benched chars {}".format(self.benched_chars));
-
-#TODO: Generate a list of benched players
+        logging.info("Benched chars {}".format(self.benched_chars))
 
 class RosterChecker:
 
@@ -481,7 +479,7 @@ class RosterChecker:
                 continue
 
             player_chars = self.chars.FindCharacters(discord_id)
-            for char_name, char in player_chars.items():
+            for char_name, _ in player_chars.items():
                 if not self.HasCharBeenRostered(rosters, char_name) and self.HasCharSignedUp(rosters, char_name):
                     benched_chars.append(char_name)
 
@@ -489,6 +487,9 @@ class RosterChecker:
 
 # Alg. Notes
 # Config file for score system
+
+#TODO: Print benched players in out file
+#Support more/less than 3 rosters.
 
 def main():
 
@@ -504,6 +505,7 @@ def main():
     parser.add_argument("-r", default="r.txt")
     parser.add_argument("-o", default="out.txt")
     parser.add_argument("-v", default=logging.INFO)
+    parser.add_argument("-s", default=0)
     args = parser.parse_args()
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -511,7 +513,8 @@ def main():
     rc = RosterChecker(args.raid_comp_data, args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
     rosters = rc.ReadRosters(args.r)
     rc.CheckRosters(rosters)
-    #rc.SaveRostersToFile(rosters, args.o)
+    if args.s:
+        rc.SaveRostersToFile(rosters, args.o)
     input("-------------- Press Enter --------------")
     rc.PrintPingMessages(rosters)
 
