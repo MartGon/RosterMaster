@@ -32,7 +32,7 @@
         "spell-hit" : {"score" : 20, "provided_by" : ["Priest:Shadow", "Druid:Balance"]},
         "bleed" : {"score" : 3, "provided_by" : ["Druid:Feral", "Warrior:Arms"]},
         "spell-dmg" : {"score" : 12, "provided_by" : ["Death Knight:Unholy", "Warlock:Affliction", "Warlock:Demonology", "Warlock:Destruction", "Druid:Balance"]},
-        "mortal-strike" : {"score" : 5, "provided_by" : ["Warrior:Arms", "Warrior:Fury", "Rogue:Combat", "Hunter:Survival", "Hunter:Marksmanship"]}
+        "mortal-strike" : {"score" : 5, "provided_by" : ["Warrior:Arms", "Warrior:Fury", "Rogue:Combat", "Hunter:Survival", "Hunter:Marksmanship", "Hunter:Beast Mastery"]}
     },
 
     "externals" : {

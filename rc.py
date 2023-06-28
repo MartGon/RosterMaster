@@ -9,10 +9,11 @@ import common
 
 class Report:
 
-    def __init__(self, roster_checker, roster: common.Roster, covered_buffs : dict, unavailable_chars: dict, duplicated_players: dict, loot: dict, class_diversity: dict):
+    def __init__(self, roster_checker, roster: common.Roster, benched_chars : list, covered_buffs : dict, unavailable_chars: dict, duplicated_players: dict, loot: dict, class_diversity: dict):
         self.roster_checker = roster_checker
 
         self.roster = roster
+        self.benched_chars = benched_chars
         self.covered_buffs = covered_buffs
         self.unavailable_chars = unavailable_chars
         self.duplicated_players = duplicated_players
@@ -63,6 +64,9 @@ class Report:
             covered, c = self.roster_checker.IsBuffCovered(self.roster, self.roster_checker.raid_comp_data['debuffs']['mortal-strike'])
             logging.info("Mortal strike provided by {}".format(c))
 
+        logging.info("Benched chars {}".format(self.benched_chars));
+
+#TODO: Generate a list of benched players
 
 class RosterChecker:
 
@@ -81,9 +85,14 @@ class RosterChecker:
         rosters = [common.Roster(self.s1, self.chars, self.tmb, 0), common.Roster(self.s2, self.chars, self.tmb, 1), common.Roster(self.s3, self.chars, self.tmb, 2)]
         with open(roster_file, 'r') as f:
             dps = True
+            bench = False
             for line in f:
                 if "Tank" in line or "Heals" in line:
                     dps = False
+                    continue
+
+                if "Bench" in line:
+                    bench = True
                     continue
 
                 chars = line.split()
@@ -93,7 +102,7 @@ class RosterChecker:
                     roster_index = math.floor(i / 2)
                     roster = rosters[roster_index]
 
-                    role = "dps" if dps else "healer" if i & 1 else "tank"
+                    role = "bench" if bench else "dps" if dps else "healer" if i & 1 else "tank"
                     roster.RosterChar(char, role)
 
         return rosters
@@ -140,7 +149,7 @@ class RosterChecker:
             print(r.signup.title)
 
             for c, r in r.items():
-                print('@' + self.chars[c]['discord_user'])
+                print('@' + self.chars[c]['discord_user'] + ' ')
             print()
 
     def AreRostersValid(self, rosters: "list[common.Roster]"):
@@ -154,7 +163,7 @@ class RosterChecker:
         rosters.sort(key=lambda x : x.id)
         for r in rosters:
             r.print()
-            report = self.GenerateReport(r)
+            report = self.GenerateReport(r, rosters)
             print()
             print("{0:<14s}Review {1}".format("", r.signup.title))
             report.print()
@@ -173,14 +182,15 @@ class RosterChecker:
         print("Score: ", score)
         print("Individual scores", iscores)
 
-    def GenerateReport(self, r: common.Roster):
+    def GenerateReport(self, r: common.Roster, rosters: "list[common.Roster]") -> Report:
         covered_buffs = self.GetCoveredBuffs(r)
         unavailable_chars = self.GetUnavailableChars(r)
         duplicated_players = self.GetDuplicatedPlayers(r)
         loot = self.GetLootCoverage(r)
         class_diversity = self.GetClassDiversity(r)
+        benched_chars = self.GetCharsInBench(r, rosters)
 
-        return Report(self, r, covered_buffs, unavailable_chars, duplicated_players, loot, class_diversity)
+        return Report(self, r, benched_chars, covered_buffs, unavailable_chars, duplicated_players, loot, class_diversity)
 
     def GetUnavailableChars(self, roster: common.Roster):
         active_players = roster.signup.GetActivePlayers()
@@ -296,7 +306,7 @@ class RosterChecker:
     def IsBuffCovered(self, roster: common.Roster, buff: dict) -> bool:
         for c, r in roster.items():
             spec = self.GetCharSpec(self.chars[c], r)
-            if spec in buff['provided_by']:
+            if spec in buff['provided_by'] and r != "bench":
                 return True, c
             
         return False, None
@@ -315,6 +325,14 @@ class RosterChecker:
                 if char_data['spec'] in spec:
                     return True
                 
+        return False
+
+    def HasCharBeenRostered(self, rosters: "list[common.Roster]", char: str):
+        
+        for r in rosters:
+            if r.ContainsChar(char):
+                return True
+            
         return False
 
     def CalcBuffCoverageScore(self, report: Report):
@@ -347,7 +365,7 @@ class RosterChecker:
         for i in range(0, len(rosters)):
             
             r = rosters[i]
-            report = self.GenerateReport(r)
+            report = self.GenerateReport(r, rosters)
 
             # Calc base score
             iscore = self.CalcBaseViabilityScore(rosters, r, report)
@@ -377,7 +395,7 @@ class RosterChecker:
         iscores = []
         for i in range(0, len(rosters)):
             r = rosters[i]
-            report = self.GenerateReport(r)
+            report = self.GenerateReport(r, rosters)
 
             # Calc base score
             iscore = self.CalcBaseViabilityScore(rosters, r, report)
@@ -452,6 +470,22 @@ class RosterChecker:
             iscore = iscore + self.raid_comp_data["misc"]["same-tank"]
 
         return iscore
+
+    def GetCharsInBench(self, r: common.Roster, rosters: "list[common.Roster]"):
+        benched_chars = []
+
+        for discord_id, p in r.signup.active_players.items():
+            
+            # Bench cannot contain alts from a given player
+            if r.ContainsPlayer(discord_id):
+                continue
+
+            player_chars = self.chars.FindCharacters(discord_id)
+            for char_name, char in player_chars.items():
+                if not self.HasCharBeenRostered(rosters, char_name) and self.HasCharSignedUp(rosters, char_name):
+                    benched_chars.append(char_name)
+
+        return benched_chars
 
 # Alg. Notes
 # Config file for score system

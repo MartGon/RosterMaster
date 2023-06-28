@@ -35,8 +35,11 @@ class CharacterBD:
                 else:
                     return
                 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> dict:
         return self.chars[key]
+    
+    def __contains__(self, key: str):
+        return key in self.chars
     
     def items(self):
         return self.chars.items()
@@ -187,16 +190,19 @@ class Roster:
         else:
             print("Error: Role {} doesn't exist".format(role))
     
-    def ContainsAlt(self, char_name):
+    def ContainsAlt(self, char_name: str):
         discord_id = self.chars[char_name]['discord_id']
         res, c = self.ContainsPlayer(discord_id)
         return res and c['name'] != char_name
 
-    def ContainsPlayer(self, discord_id):
+    def ContainsPlayer(self, discord_id: str):
         for c, r in self.roster.items():
             if self.chars[c]['discord_id'] == discord_id:
-                return True, c
+                return r != "bench", c
         return False
+    
+    def ContainsChar(self, char: str):
+        return char in self.roster and self.roster[char] != "bench"
     
     def GetPlayerAmount(self):
         return len(self.roster)
