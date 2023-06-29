@@ -22,10 +22,17 @@ class Report:
         self.class_diversity = class_diversity
 
     def IsRaidViable(self):
-        soaker_req = not self.roster.signup.RequiresSoaker() or (self.roster.signup.RequiresSoaker() and self.roster.GetSoaker())
+        soaker_req = not self.roster.signup.RequiresSoaker() or self.roster.GetSoaker()
         return self.roster.IsValid() and soaker_req and len(self.unavailable_chars) == 0 and len(self.duplicated_players) == 0
 
     def print(self):
+
+        # Print roster
+        print()
+        print("{0:<14s}Review {1}".format("", self.roster.signup.title))
+        self.roster.print()
+
+        # Print info
         short_run = self.roster.signup.IsShortRun()
         if short_run:
             logging.info("Short run: {}".format(short_run))
@@ -66,6 +73,11 @@ class Report:
 
         logging.info("Benched chars {}".format(self.benched_chars))
 
+        buff_score, debuff_score = self.roster_checker.CalcBuffCoverageScore(self.roster)
+        logging.info("Buff score: {} Debuff scoqre: {} Total: {}".format(buff_score, debuff_score, buff_score + debuff_score))
+
+        print()
+
 class RosterChecker:
 
     def __init__(self, raid_comp_data, charDB_file, inactive_chars, tmb_file, contested_items_file, r1_file, r2_file, r3_file):
@@ -74,33 +86,31 @@ class RosterChecker:
         self.inactive_chars = json.load(open(inactive_chars))
         self.contested_items = json.load(open(contested_items_file))
         self.tmb = tmb.ReadDataFromJson(tmb.GetDataFromFile(tmb_file))
-        self.s1 = common.Signup(self.chars, r1_file)
-        self.s2 = common.Signup(self.chars, r2_file)
-        self.s3 = common.Signup(self.chars, r3_file)
+        self.signups = [common.Signup(self.chars, r1_file), common.Signup(self.chars, r2_file), common.Signup(self.chars, r3_file)]
 
     def ReadRosters(self, roster_file):
 
-        rosters = [common.Roster(self.s1, self.chars, self.tmb, 0), common.Roster(self.s2, self.chars, self.tmb, 1), common.Roster(self.s3, self.chars, self.tmb, 2)]
+        rosters = []
         with open(roster_file, 'r') as f:
             dps = True
-            bench = False
             for line in f:
                 if "Tank" in line or "Heals" in line:
                     dps = False
                     continue
 
                 if "Bench" in line:
-                    bench = True
-                    continue
+                    break
 
                 chars = line.split()
                 for i in range(0, len(chars)):
                     char = chars[i].strip()
 
                     roster_index = math.floor(i / 2)
+                    if roster_index >= len(rosters):
+                        rosters.append(common.Roster(self.signups[roster_index], self.chars, self.tmb, 0))    
                     roster = rosters[roster_index]
 
-                    role = "bench" if bench else "dps" if dps else "healer" if i & 1 else "tank"
+                    role = "dps" if dps else "healer" if i & 1 else "tank"
                     roster.RosterChar(char, role)
 
         return rosters
@@ -160,19 +170,12 @@ class RosterChecker:
         
         rosters.sort(key=lambda x : x.id)
         for r in rosters:
-            r.print()
             report = self.GenerateReport(r, rosters)
-            print()
-            print("{0:<14s}Review {1}".format("", r.signup.title))
             report.print()
-            buff_score, debuff_score = self.CalcBuffCoverageScore(report)
-            logging.info("Buff score: {} Debuff scoqre: {} Total: {}".format(buff_score, debuff_score, buff_score + debuff_score))
 
             for c, r in r.items():
-                if not self.HasCharSignedUp(rosters, c):
+                if not self.HasCharSignedUp(self.signups, c):
                     logging.warning("Using Character {} which didn't sing up".format(c))
-
-            print()
 
         self.CheckDuplicates(rosters)
 
@@ -309,17 +312,31 @@ class RosterChecker:
             
         return False, None
     
+    def CalcBuffCoverageScore(self, roster: common.Roster):
+        covered_buffs = self.GetCoveredBuffs(roster)
+        buff_score = 0
+        for bname, is_covered in covered_buffs["buffs"].items():
+            if is_covered:
+                buff_score = buff_score + self.raid_comp_data["buffs"][bname]["score"]
+
+        debuff_score = 0
+        for bname, is_covered in covered_buffs["debuffs"].items():
+            if is_covered:
+                debuff_score = debuff_score + self.raid_comp_data["debuffs"][bname]["score"]
+
+        return buff_score, debuff_score
+    
     def GetCharSpec(self, char: dict, role: str) -> str:
         class_ = char["class"]
         class_spec = char['spec'] if char["MS"] == role else char['offspec']
         return class_ + ":" + class_spec
     
-    def HasCharSignedUp(self, rosters: "list[common.Roster]", char: str):
-        for r in rosters:
+    def HasCharSignedUp(self, signups: "list[common.Signup]", char: str):
+        for s in signups:
             char_data = self.chars[char]
             discord_id = char_data['discord_id']
-            if discord_id in r.signup.active_players:
-                spec = r.signup.active_players[discord_id]['spec']
+            if discord_id in s.active_players:
+                spec = s.active_players[discord_id]['spec']
                 if char_data['spec'] in spec:
                     return True
                 
@@ -332,19 +349,6 @@ class RosterChecker:
                 return True
             
         return False
-
-    def CalcBuffCoverageScore(self, report: Report):
-        buff_score = 0
-        for bname, is_covered in report.covered_buffs["buffs"].items():
-            if is_covered:
-                buff_score = buff_score + self.raid_comp_data["buffs"][bname]["score"]
-
-        debuff_score = 0
-        for bname, is_covered in report.covered_buffs["debuffs"].items():
-            if is_covered:
-                debuff_score = debuff_score + self.raid_comp_data["debuffs"][bname]["score"]
-
-        return buff_score, debuff_score
 
     def CalcRoleScore(self, r: common.Roster, role: str):
         role_chars = r.GetCharsByRole(role)
@@ -402,7 +406,7 @@ class RosterChecker:
                 continue
 
             # Calc buff/debuff coverage
-            buff_score, debuff_score = self.CalcBuffCoverageScore(report)
+            buff_score, debuff_score = self.CalcBuffCoverageScore(r)
             iscore = iscore + buff_score + debuff_score
 
             # Calc roles score
@@ -448,7 +452,7 @@ class RosterChecker:
                     iscore = iscore + self.raid_comp_data["misc"]["main-in-short-run"]
 
             # Punish using char that dindt  sing up
-            if not self.HasCharSignedUp(rosters, c):
+            if not self.HasCharSignedUp(self.signups, c):
                 iscore = iscore - self.raid_comp_data["misc"]["unsigned-char"]
 
             # Punish using inactive chars
@@ -480,7 +484,7 @@ class RosterChecker:
 
             player_chars = self.chars.FindCharacters(discord_id)
             for char_name, _ in player_chars.items():
-                if not self.HasCharBeenRostered(rosters, char_name) and self.HasCharSignedUp(rosters, char_name):
+                if not self.HasCharBeenRostered(rosters, char_name) and self.HasCharSignedUp(self.signups, char_name):
                     benched_chars.append(char_name)
 
         return benched_chars
