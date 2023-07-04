@@ -90,6 +90,19 @@ class SlackerDetector:
                     else:
                         unavailable_players[s.title] = [char_name]
         return unavailable_players
+    
+    def GetActiveChars(self) -> dict:
+        
+        active_chars = {}
+        active_players = self.GetActivePlayers()
+
+        for id, _ in active_players.items():
+            chars = self.chars.FindCharacters(id)
+            for name, char in chars.items():
+                active_chars[name] = char
+
+        return active_chars
+
 
 def main():
 
@@ -113,6 +126,13 @@ def main():
             print(char_name)
         print()
 
+    sd = SlackerDetector(args.characters_db, args.sfp)
+    chars = sd.GetActiveChars()
+    print("These are the active chars ({}) which have signed up for at least one raid this week".format(len(chars)))
+    for name, char in chars.items():
+        print(name)
+    print()
+
     # actives = sd.GetActivesPerSignup()
     # for signup, actives in actives.items():
     #     print(signup)
@@ -129,11 +149,11 @@ def main():
     #         print(char_name)
     #     print()
 
-    print("The following players are not raiding in any day")
-    slackers = sd.GetInactivePlayers()
-    for _, slacker in slackers.items():
-        print(slacker)
-    print()
+    # print("The following players are not raiding in any day")
+    # slackers = sd.GetInactivePlayers()
+    # for _, slacker in slackers.items():
+    #     print(slacker)
+    # print()
 
     print("The following players have not signed up for any raid")
     slackers = sd.GetSlackers()
