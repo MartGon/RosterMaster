@@ -1,5 +1,6 @@
 import csv
 import json
+import os.path
 
 class WoW:
 
@@ -61,10 +62,13 @@ class CharacterBD:
         chars.pop(char_name)
         return chars
     
-    def GetPlayers(self):
+    def GetPlayers(self) -> dict:
         players = {}
         for char_name, char in self.chars.items():
-            players[char['discord_id']] = char_name
+            if char['discord_id'] not in players:
+                players[char['discord_id']] = char_name
+            elif char['is_main']: 
+                players[char['discord_id']] = char_name
         return players
     
     def GetMain(self, discord_id: str):
@@ -78,6 +82,20 @@ class CharacterBD:
         return self.GetMain(discord_id)
     
 class Signup:
+
+    def LoadSignups(char_db : CharacterBD, filename_pattern: str) -> "list[Signup]":
+        signups = []
+        file_num = 1
+        filename = filename_pattern.replace("%i", str(file_num))
+        while os.path.isfile(filename):
+            s = Signup(char_db, filename)
+            signups.append(s)
+
+            file_num = file_num + 1
+            filename = filename_pattern.replace("%i", str(file_num))
+
+        return signups
+
 
     def __init__(self, charDB, file):
         self.charDB = charDB
@@ -116,7 +134,7 @@ class Signup:
                 chars[c["name"]] = c
         return chars
     
-    def GetActivePlayers(self):
+    def GetActivePlayers(self) -> dict:
         return self.active_players
 
     def IsShortRun(self):
