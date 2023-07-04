@@ -99,9 +99,23 @@ class SlackerDetector:
         for id, _ in active_players.items():
             chars = self.chars.FindCharacters(id)
             for name, char in chars.items():
-                active_chars[name] = char
+                if self.HasCharSignedUp(self.signups, name):
+                    active_chars[name] = char
 
         return active_chars
+    
+
+    # TODO: Move to common. Then remove from rc and from here
+    def HasCharSignedUp(self, signups: "list[common.Signup]", char: str):
+        for s in signups:
+            char_data = self.chars[char]
+            discord_id = char_data['discord_id']
+            if discord_id in s.active_players:
+                spec = s.active_players[discord_id]['spec']
+                if char_data['spec'] in spec:
+                    return True
+                
+        return False
 
 
 def main():
