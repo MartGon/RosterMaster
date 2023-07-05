@@ -80,19 +80,20 @@ class Report:
 
 class RosterChecker:
 
-    def __init__(self, raid_comp_data, charDB_file, inactive_chars, tmb_file, contested_items_file, r1_file, r2_file, r3_file):
+    def __init__(self, raid_comp_data, charDB_file, inactive_chars, tmb_file, contested_items_file, sfp):
         self.raid_comp_data = json.load(open(raid_comp_data))
         self.chars = common.CharacterBD(charDB_file)
         self.inactive_chars = json.load(open(inactive_chars))
         self.contested_items = json.load(open(contested_items_file))
         self.tmb = tmb.ReadDataFromJson(tmb.GetDataFromFile(tmb_file))
-        self.signups = [common.Signup(self.chars, r1_file), common.Signup(self.chars, r2_file), common.Signup(self.chars, r3_file)]
+        self.signups = common.Signup.LoadSignups(self.chars, sfp)
 
     def ReadRosters(self, roster_file):
 
         rosters = []
         with open(roster_file, 'r') as f:
             dps = True
+            signup_indices = [int(a) for a in f.readline().strip('\n').split(' ')]
             for line in f:
                 if "Tank" in line or "Heals" in line:
                     dps = False
@@ -105,10 +106,10 @@ class RosterChecker:
                 for i in range(0, len(chars)):
                     char = chars[i].strip()
 
-                    roster_index = math.floor(i / 2)
-                    if roster_index >= len(rosters):
-                        rosters.append(common.Roster(self.signups[roster_index], self.chars, self.tmb, 0))    
-                    roster = rosters[roster_index]
+                    signup_index = math.floor(i / 2)
+                    if signup_index >= len(rosters):
+                        rosters.append(common.Roster(self.signups[signup_indices[signup_index]], self.chars, self.tmb, 0))    
+                    roster = rosters[signup_index]
 
                     role = "dps" if dps else "healer" if i & 1 else "tank"
                     roster.RosterChar(char, role)
@@ -503,9 +504,7 @@ def main():
     parser.add_argument("--inactive-chars", default='inactive-chars.json')
     parser.add_argument("--tmb-file", default="character-json.json")
     parser.add_argument("--contested-items", default="contested-items.json")
-    parser.add_argument("--s1", default="s1.json")
-    parser.add_argument("--s2", default="s2.json")
-    parser.add_argument("--s3", default="s3.json")
+    parser.add_argument("--sfp", default="s%i.json")
     parser.add_argument("-r", default="r.txt")
     parser.add_argument("-o", default="out.txt")
     parser.add_argument("-v", default=logging.INFO)
@@ -514,7 +513,7 @@ def main():
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
-    rc = RosterChecker(args.raid_comp_data, args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
+    rc = RosterChecker(args.raid_comp_data, args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.sfp)
     rosters = rc.ReadRosters(args.r)
     rc.CheckRosters(rosters)
     if args.s:
