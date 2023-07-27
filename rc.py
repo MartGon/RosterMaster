@@ -493,9 +493,7 @@ class RosterChecker:
 # Alg. Notes
 # Config file for score system
 
-#TODO: Print benched players in out file
-#Support more/less than 3 rosters.
-
+#TODO: Print benched players in out filel
 def main():
 
     parser = argparse.ArgumentParser(prog='RosterChecker', description='Checks the viability of a given set of rosters', epilog='Call with --help to find a list of available commands')
