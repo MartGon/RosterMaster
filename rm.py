@@ -12,17 +12,18 @@ from rc import RosterChecker
 
 class RosterMaster:
 
-    def __init__(self, charDB_file, tmb_file, contested_items_file, s1_file, s2_file, s3_file):
+    def __init__(self, charDB_file, tmb_file, contested_items_file, sfp):
         self.chars = common.CharacterBD(charDB_file)
         self.contested_items = json.load(open(contested_items_file))
         self.tmb = tmb.ReadDataFromJson(tmb.GetDataFromFile(tmb_file))
-        self.s1 = common.Signup(self.chars, s1_file)
-        self.s2 = common.Signup(self.chars, s2_file)
-        self.s3 = common.Signup(self.chars, s3_file)
+        self.signups = common.Signup.LoadSignups(self.chars, sfp)
         
     def GenerateRandomRosters(self):
 
-        rosters = [common.Roster(self.s1, self.chars, self.tmb, 0), common.Roster(self.s2, self.chars, self.tmb, 1), common.Roster(self.s3, self.chars, self.tmb, 2)]
+        rosters = []
+        for id in range(0, len(self.signups)):
+            s = self.signups[id]
+            rosters.append(common.Roster(s, self.chars, self.tmb, id))
 
         self.AssignByRole(rosters, "tank", 2)
         self.AssignByRole(rosters, "healer", 2)
@@ -76,9 +77,7 @@ def main():
     parser.add_argument("--characters-db", default="characters-db.csv")
     parser.add_argument("--inactive-chars", default='inactive-chars.json')
     parser.add_argument("--tmb-file", default="character-json.json")
-    parser.add_argument("--s1", default="s1.json")
-    parser.add_argument("--s2", default="s2.json")
-    parser.add_argument("--s3", default="s3.json")
+    parser.add_argument("--sfp", default="s%i.json")
     parser.add_argument("--contested-items", default="contested-items.json")
     parser.add_argument("-o", default="out.txt")
     parser.add_argument("-i", default=10000, type=int)
@@ -86,8 +85,8 @@ def main():
     args = parser.parse_args()
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
-    rm = RosterMaster(args.characters_db, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
-    rc = RosterChecker(args.raid_comp_data, args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.s1, args.s2, args.s3)
+    rm = RosterMaster(args.characters_db, args.tmb_file, args.contested_items, args.sfp)
+    rc = RosterChecker(args.raid_comp_data, args.characters_db, args.inactive_chars, args.tmb_file, args.contested_items, args.sfp)
 
     # Multithreaded generation
     mgr = multiprocessing.Manager()

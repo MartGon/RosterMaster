@@ -163,11 +163,11 @@ def main():
     #         print(char_name)
     #     print()
 
-    # print("The following players are not raiding in any day")
-    # slackers = sd.GetInactivePlayers()
-    # for _, slacker in slackers.items():
-    #     print(slacker)
-    # print()
+    print("The following players are not raiding in any day")
+    slackers = sd.GetInactivePlayers()
+    for _, slacker in slackers.items():
+        print(slacker)
+    print()
 
     print("The following players have not signed up for any raid")
     slackers = sd.GetSlackers()
